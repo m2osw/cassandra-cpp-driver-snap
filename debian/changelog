@@ -1,0 +1,5 @@
+cassandra-cpp-driver (2.11.0.0) xenial; urgency=high
+
+  * First version of cassandra-cpp-driver within Snap.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Mon, 18 Mar 2019 23:43:40 -0800
