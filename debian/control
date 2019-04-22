@@ -12,14 +12,14 @@ Homepage: https://snapwebsites.org/
 Vcs-Git: https://github.com/m2osw/snapcpp.git
 Vcs-Browser: https://github.com/m2osw/cassandra-cpp-driver
 
-Package: libcassandra-dev
+Package: cassandra-cpp-driver-dev
 Section: libdevel
 Architecture: any
 Depends: libcassandra (= ${binary:Version}), ${misc:Depends}
 Description: Cassandra C++ Driver
  Development files to compile against the Cassandra C++ driver.
 
-Package: libcassandra
+Package: cassandra-cpp-driver
 Section: libdevel
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}
