@@ -1,4 +1,4 @@
-Source: cassandra-cpp-driver
+Source: cassandra-cpp-driver-snap
 Priority: extra
 Maintainer: Alexis Wilke <alexis@m2osw.com>
 Build-Depends: cmake,
@@ -11,18 +11,18 @@ Homepage: https://snapwebsites.org/
 Vcs-Git: https://github.com/m2osw/snapcpp.git
 Vcs-Browser: https://github.com/m2osw/cassandra-cpp-driver
 
-Package: cassandra-cpp-driver-dev
+Package: cassandra-cpp-driver-snap-dev
 Section: libdevel
 Architecture: any
-Depends: cassandra-cpp-driver (= ${binary:Version}), ${misc:Depends}
-Description: Cassandra C++ Driver
+Depends: cassandra-cpp-driver-snap (= ${binary:Version}), ${misc:Depends}
+Description: Cassandra C++ Driver for Snap! Websites
  Development files to compile against the Cassandra C++ driver.
 
-Package: cassandra-cpp-driver
+Package: cassandra-cpp-driver-snap
 Section: libs
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}
-Description: Cassandra C++ Driver
+Description: Cassandra C++ Driver for Snap! Websites
  This is the driver used to access your Cassandra cluster. It also works to
  access a Scylla cluster.
 
