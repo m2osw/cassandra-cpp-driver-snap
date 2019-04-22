@@ -1,5 +1,5 @@
 Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
-Upstream-Name: cassandra
+Upstream-Name: cpp-driver
 Source: http://downloads.datastax.com/cpp-driver
 
 Files: *
@@ -16,3 +16,7 @@ License: APLv2
   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
   See the License for the specific language governing permissions and
   limitations under the License.
+
+Files: debian
+Copyright: Copyright (c) Made to Order Software Corporation
+License: GPL2
