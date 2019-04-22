@@ -1,3 +1,9 @@
+cassandra-cpp-driver-snap (2.11.0.2~xenial) xenial; urgency=high
+
+  * Fixed dependency to libssl, it also needs to use the "-dev" version.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Mon, 22 Mar 2019 16:11:03 -0800
+
 cassandra-cpp-driver-snap (2.11.0.1~xenial) xenial; urgency=high
 
   * Fixed dependency to libuv1-snap, it needs to use the "-dev" version.

@@ -4,7 +4,7 @@ Maintainer: Alexis Wilke <alexis@m2osw.com>
 Build-Depends: cmake,
     debhelper,
     libuv1-snap-dev (>= 1.28.0),
-    libssl
+    libssl-dev
 Standards-Version: 3.9.4
 Section: libs
 Homepage: https://snapwebsites.org/
