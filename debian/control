@@ -3,7 +3,7 @@ Priority: extra
 Maintainer: Alexis Wilke <alexis@m2osw.com>
 Build-Depends: cmake,
     debhelper,
-    libuv (>= 1.8.0),
+    libuv (>= 1.28.0),
     libssl
 Standards-Version: 3.9.4
 Section: libs
