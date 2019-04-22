@@ -4,8 +4,7 @@ Maintainer: Alexis Wilke <alexis@m2osw.com>
 Build-Depends: cmake,
     debhelper,
     libuv (>= 1.8.0),
-    libssl,
-    snapcmakemodules (>= 1.0.35.3~xenial)
+    libssl
 Standards-Version: 3.9.4
 Section: libs
 Homepage: https://snapwebsites.org/
@@ -20,7 +19,7 @@ Description: Cassandra C++ Driver
  Development files to compile against the Cassandra C++ driver.
 
 Package: cassandra-cpp-driver
-Section: libdevel
+Section: libs
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}
 Description: Cassandra C++ Driver
