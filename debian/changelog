@@ -1,3 +1,15 @@
+cassandra-cpp-driver-snap (2.11.0.6~xenial) xenial; urgency=high
+
+  * Removing the libuv1-snap-dev as a dependency of the -dev package. No need.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Mon, 22 Mar 2019 23:24:57 -0800
+
+cassandra-cpp-driver-snap (2.11.0.5~xenial) xenial; urgency=high
+
+  * Added the libuv1-snap as a dependency of the Cassandra library.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Mon, 22 Mar 2019 23:01:05 -0800
+
 cassandra-cpp-driver-snap (2.11.0.5~xenial) xenial; urgency=high
 
   * Fixed the library destination path.
