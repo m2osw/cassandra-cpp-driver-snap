@@ -1,3 +1,10 @@
+cassandra-cpp-driver-snap (2.11.0.4~xenial) xenial; urgency=high
+
+  * The libraries are installed under .../x86_64-linux-gnu/...
+  * There are no cmake files that get installed.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Mon, 22 Mar 2019 18:03:01 -0800
+
 cassandra-cpp-driver-snap (2.11.0.3~xenial) xenial; urgency=high
 
   * Fixed the name of the .install files, the -snap was not yet included.
