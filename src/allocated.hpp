@@ -14,28 +14,28 @@
   limitations under the License.
 */
 
-#ifndef __CASS_CLUSTER_CONFIG_HPP_INCLUDED__
-#define __CASS_CLUSTER_CONFIG_HPP_INCLUDED__
+#ifndef __CASS_ALLOCATED_HPP_INCLUDED__
+#define __CASS_ALLOCATED_HPP_INCLUDED__
 
-#include "allocated.hpp"
-#include "config.hpp"
-#include "external.hpp"
-
-#include "uv.h"
+#include <cstddef>
 
 namespace cass {
 
-class ClusterConfig : public Allocated {
+class Allocated {
 public:
-  const Config& config() const { return config_; }
-  Config& config() { return config_; }
+  void* operator new(size_t size);
+  void* operator new[](size_t size);
+  void operator delete(void* ptr);
+  void operator delete[](void* ptr);
 
-private:
-  Config config_;
+  void* operator new(size_t, void* p)  { return p; }
+  void* operator new[](size_t, void* p)  { return p; }
 };
 
-} // namespace cass
+template <class T>
+struct AllocatedT : public Allocated, public T { };
 
-EXTERNAL_TYPE(cass::ClusterConfig, CassCluster)
+
+} // namespace cass
 
 #endif

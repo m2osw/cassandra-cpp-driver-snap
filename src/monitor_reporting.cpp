@@ -14,28 +14,14 @@
   limitations under the License.
 */
 
-#ifndef __CASS_CLUSTER_CONFIG_HPP_INCLUDED__
-#define __CASS_CLUSTER_CONFIG_HPP_INCLUDED__
-
-#include "allocated.hpp"
-#include "config.hpp"
-#include "external.hpp"
-
-#include "uv.h"
+#include "monitor_reporting.hpp"
 
 namespace cass {
 
-class ClusterConfig : public Allocated {
-public:
-  const Config& config() const { return config_; }
-  Config& config() { return config_; }
-
-private:
-  Config config_;
-};
+MonitorReporting* create_monitor_reporting(const String& client_id,
+                                           const String& session_id,
+                                           const Config& config) {
+  return new NopMonitorReporting();
+}
 
 } // namespace cass
-
-EXTERNAL_TYPE(cass::ClusterConfig, CassCluster)
-
-#endif

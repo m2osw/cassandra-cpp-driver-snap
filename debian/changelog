@@ -1,3 +1,10 @@
+cassandra-cpp-driver-snap (2.12.0.0~xenial) xenial; urgency=high
+
+  * Upgraded to 2.12, latest available in github cpp-driver.
+  * SNAP-688: added "ALL" to the doxygen target so it actually gets build.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Sun, 28 Mar 2019 00:55:25 -0800
+
 cassandra-cpp-driver-snap (2.11.0.10~xenial) xenial; urgency=high
 
   * SNAP-688: doxygen needs to be installed in the build.

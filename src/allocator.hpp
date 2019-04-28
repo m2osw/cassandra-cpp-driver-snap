@@ -10,6 +10,7 @@
 
 #include "memory.hpp"
 
+#include <limits>
 namespace cass {
 
 template <class T>
