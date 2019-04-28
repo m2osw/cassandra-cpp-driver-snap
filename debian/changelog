@@ -1,3 +1,9 @@
+cassandra-cpp-driver-snap (2.11.0.10~xenial) xenial; urgency=high
+
+  * SNAP-688: doxygen needs to be installed in the build.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Sun, 28 Mar 2019 00:55:25 -0800
+
 cassandra-cpp-driver-snap (2.11.0.9~xenial) xenial; urgency=high
 
   * SNAP-688: added the CASS_BUILD_DOCS=ON to the command line.

@@ -3,6 +3,8 @@ Priority: extra
 Maintainer: Alexis Wilke <alexis@m2osw.com>
 Build-Depends: cmake,
     debhelper,
+    doxygen,
+    graphviz,
     libuv1-snap-dev (>= 1.28.0),
     libssl-dev
 Standards-Version: 3.9.4
