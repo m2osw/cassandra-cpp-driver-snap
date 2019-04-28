@@ -127,6 +127,9 @@ macro(CassDoxygen)
         ${DOXYGEN_EXECUTABLE} ${CMAKE_CURRENT_BINARY_DIR}/Doxyfile
         WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
         COMMENT "Generating API documentation with Doxygen" VERBATIM)
+    install( DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/doxygen/html
+        DESTINATION share/doc/cassandra-cpp-driver-snap/
+    )
   endif()
 endmacro()
 

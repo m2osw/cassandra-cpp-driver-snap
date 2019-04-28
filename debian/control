@@ -15,8 +15,16 @@ Package: cassandra-cpp-driver-snap-dev
 Section: libdevel
 Architecture: any
 Depends: cassandra-cpp-driver-snap (= ${binary:Version}), ${misc:Depends}
+Recommends: cassandra-cpp-driver-snap-doc
 Description: Cassandra C++ Driver for Snap! Websites
  Development files to compile against the Cassandra C++ driver.
+
+Package: cassandra-cpp-driver-snap-doc
+Section: doc
+Architecture: all
+Depends: ${misc:Depends}
+Description: Cassandra C++ Driver for Snap! Websites
+ Documentation of the Cassandra C++ driver API.
 
 Package: cassandra-cpp-driver-snap
 Section: libs
