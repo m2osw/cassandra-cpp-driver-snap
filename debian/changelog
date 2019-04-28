@@ -1,4 +1,4 @@
-cassandra-cpp-driver-snap (2.11.0.8~xenial) xenial; urgency=high
+cassandra-cpp-driver-snap (2.11.0.9~xenial) xenial; urgency=high
 
   * SNAP-688: added the CASS_BUILD_DOCS=ON to the command line.
 
