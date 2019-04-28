@@ -152,6 +152,7 @@ if(CASS_BUILD_STATIC)
   endif()
 
   set_property(TARGET ${PROJECT_LIB_NAME_STATIC} PROPERTY FOLDER "Driver/Cassandra")
+  set_target_properties(${PROJECT_LIB_NAME_STATIC} PROPERTIES OUTPUT_NAME cassandra)
 endif()
 
 #-----------------------------

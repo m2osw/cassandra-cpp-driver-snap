@@ -1,3 +1,10 @@
+cassandra-cpp-driver-snap (2.11.0.7~xenial) xenial; urgency=high
+
+  * SNAP-688: added the static library to the -dev package.
+  * added the -std=c++14 compilation flag,
+
+ -- Alexis Wilke <alexis@m2osw.com>  Sat, 27 Mar 2019 21:48:17 -0800
+
 cassandra-cpp-driver-snap (2.11.0.6~xenial) xenial; urgency=high
 
   * Removing the libuv1-snap-dev as a dependency of the -dev package. No need.
