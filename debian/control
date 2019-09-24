@@ -32,7 +32,7 @@ Package: cassandra-cpp-driver-snap
 Section: libs
 Architecture: any
 Depends: libuv1-snap, ${shlibs:Depends}, ${misc:Depends}
-Replaces: cassandra-cpp-driver
+Conflicts: cassandra-cpp-driver
 Description: Cassandra C++ Driver for Snap! Websites
  This is the driver used to access your Cassandra cluster. It also works to
  access a Scylla cluster.
