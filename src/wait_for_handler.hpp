@@ -14,18 +14,18 @@
   limitations under the License.
 */
 
-#ifndef __CASS_WAIT_FOR_HANDLER_HPP_INCLUDED__
-#define __CASS_WAIT_FOR_HANDLER_HPP_INCLUDED__
+#ifndef DATASTAX_INTERNAL_WAIT_FOR_HANDLER_HPP
+#define DATASTAX_INTERNAL_WAIT_FOR_HANDLER_HPP
 
 #include "connection.hpp"
 #include "ref_counted.hpp"
-#include "request_handler.hpp"
 #include "request_callback.hpp"
+#include "request_handler.hpp"
 #include "response.hpp"
 
 #include <uv.h>
 
-namespace cass {
+namespace datastax { namespace internal { namespace core {
 
 /**
  * A handler that waits for server-side data by running queries and verifying
@@ -57,13 +57,11 @@ public:
    * @param retry_wait_time_ms The amount of time to wait between failed
    * attempts.
    */
-  WaitForHandler(const RequestHandler::Ptr& request_handler,
-                 const Host::Ptr& current_host,
-                 const Response::Ptr& response,
-                 uint64_t max_wait_time_ms,
+  WaitForHandler(const RequestHandler::Ptr& request_handler, const Host::Ptr& current_host,
+                 const Response::Ptr& response, uint64_t max_wait_time_ms,
                  uint64_t retry_wait_time_ms);
 
-  virtual ~WaitForHandler() { }
+  virtual ~WaitForHandler() {}
 
 protected:
   /**
@@ -91,8 +89,7 @@ protected:
   virtual void on_error(WaitForError code, const String& message) = 0;
 
 protected:
-  const Address& address() const { return connection_->address(); }
-  const String& address_string() const { return connection_->address_string(); }
+  const Host::Ptr& host() const { return connection_->host(); }
 
   const Response::Ptr& response() const { return response_; }
 
@@ -129,6 +126,6 @@ private:
   const Response::Ptr response_;
 };
 
-} // namespace cass
+}}} // namespace datastax::internal::core
 
 #endif

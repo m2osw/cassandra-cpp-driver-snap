@@ -20,7 +20,11 @@
 #include "random.hpp"
 #include "round_robin_policy.hpp"
 
-namespace cass {
+using namespace datastax;
+using namespace datastax::internal;
+using namespace datastax::internal::core;
+
+namespace datastax { namespace internal { namespace core {
 
 /**
  * A task for running the connection process.
@@ -28,11 +32,9 @@ namespace cass {
 class RunResolveAndConnectCluster : public Task {
 public:
   RunResolveAndConnectCluster(const ClusterConnector::Ptr& connector)
-    : connector_(connector) { }
+      : connector_(connector) {}
 
-  void run(EventLoop* event_loop) {
-    connector_->internal_resolve_and_connect();
-  }
+  void run(EventLoop* event_loop) { connector_->internal_resolve_and_connect(); }
 
 private:
   ClusterConnector::Ptr connector_;
@@ -44,29 +46,28 @@ private:
 class RunCancelCluster : public Task {
 public:
   RunCancelCluster(const ClusterConnector::Ptr& connector)
-    : connector_(connector) { }
+      : connector_(connector) {}
 
-  void run(EventLoop* event_loop) {
-    connector_->internal_cancel();
-  }
+  void run(EventLoop* event_loop) { connector_->internal_cancel(); }
 
 private:
   ClusterConnector::Ptr connector_;
 };
 
-ClusterConnector::ClusterConnector(const ContactPointList& contact_points,
-                                   ProtocolVersion protocol_version,
-                                   const Callback& callback)
-  : remaining_connector_count_(0)
-  , contact_points_(contact_points)
-  , protocol_version_(protocol_version)
-  , listener_(NULL)
-  , event_loop_(NULL)
-  , random_(NULL)
-  , metrics_(NULL)
-  , callback_(callback)
-  , error_code_(CLUSTER_OK)
-  , ssl_error_code_(CASS_OK) { }
+}}} // namespace datastax::internal::core
+
+ClusterConnector::ClusterConnector(const AddressVec& contact_points,
+                                   ProtocolVersion protocol_version, const Callback& callback)
+    : remaining_connector_count_(0)
+    , contact_points_(contact_points)
+    , protocol_version_(protocol_version)
+    , listener_(NULL)
+    , event_loop_(NULL)
+    , random_(NULL)
+    , metrics_(NULL)
+    , callback_(callback)
+    , error_code_(CLUSTER_OK)
+    , ssl_error_code_(CASS_OK) {}
 
 ClusterConnector* ClusterConnector::with_listener(ClusterListener* listener) {
   listener_ = listener;
@@ -103,68 +104,30 @@ Cluster::Ptr ClusterConnector::release_cluster() {
 void ClusterConnector::internal_resolve_and_connect() {
   inc_ref();
 
-  if (random_) {
+  if (random_ && !contact_points_.empty()) {
     random_shuffle(contact_points_.begin(), contact_points_.end(), random_);
   }
 
-  for (ContactPointList::const_iterator it = contact_points_.begin(),
-       end = contact_points_.end(); it != end; ++it) {
-    const String& contact_point = *it;
-    Address address;
-    // Attempt to parse the contact point string. If it's an IP address
-    // then immediately add it to our resolved contact points, otherwise
-    // attempt to resolve the string as a hostname.
-    if (Address::from_string(contact_point, settings_.port, &address)) {
-      contact_points_resolved_.push_back(address);
-    } else {
-      if (!resolver_) {
-        resolver_.reset(
-              new MultiResolver(
-                bind_callback(&ClusterConnector::on_resolve, this)));
-      }
-      resolver_->resolve(event_loop_->loop(),
-                         contact_point,
-                         settings_.port,
-                         settings_.control_connection_settings.connection_settings.socket_settings.resolve_timeout_ms);
-    }
-  }
+  resolver_ = settings_.cluster_metadata_resolver_factory->new_instance(settings_);
 
-  if (!resolver_) {
-    internal_connect_all();
-  }
+  resolver_->resolve(event_loop_->loop(), contact_points_,
+                     bind_callback(&ClusterConnector::on_resolve, this));
 }
 
 void ClusterConnector::internal_connect(const Address& address, ProtocolVersion version) {
   Host::Ptr host(new Host(address));
-  ControlConnector::Ptr connector(new ControlConnector(host,
-                                                       version,
-                                                       bind_callback(&ClusterConnector::on_connect, this)));
+  ControlConnector::Ptr connector(
+      new ControlConnector(host, version, bind_callback(&ClusterConnector::on_connect, this)));
   connectors_[address] = connector; // Keep track of the connectors so they can be canceled.
-  connector
-      ->with_metrics(metrics_)
+  connector->with_metrics(metrics_)
       ->with_settings(settings_.control_connection_settings)
       ->connect(event_loop_->loop());
-}
-
-void ClusterConnector::internal_connect_all() {
-  if (contact_points_resolved_.empty()) {
-    error_code_ = CLUSTER_ERROR_NO_HOSTS_AVAILABLE;
-    error_message_ = "Unable to connect to any contact points";
-    finish();
-    return;
-  }
-  remaining_connector_count_ = contact_points_resolved_.size();
-  for (AddressVec::const_iterator it = contact_points_resolved_.begin(),
-       end = contact_points_resolved_.end(); it != end; ++it) {
-    internal_connect(*it, protocol_version_);
-  }
 }
 
 void ClusterConnector::internal_cancel() {
   error_code_ = CLUSTER_CANCELED;
   if (resolver_) resolver_->cancel();
-  for (ConnectorMap::iterator it = connectors_.begin(),
-       end = connectors_.end(); it != end; ++it) {
+  for (ConnectorMap::iterator it = connectors_.begin(), end = connectors_.end(); it != end; ++it) {
     it->second->cancel();
   }
   if (cluster_) cluster_->close();
@@ -191,52 +154,42 @@ void ClusterConnector::maybe_finish() {
   }
 }
 
-void ClusterConnector::on_error(ClusterConnector::ClusterError code,
-                                const String& message) {
+void ClusterConnector::on_error(ClusterConnector::ClusterError code, const String& message) {
   assert(code != CLUSTER_OK && "Notified error without an error");
   error_message_ = message;
   error_code_ = code;
   maybe_finish();
 }
 
-void ClusterConnector::on_resolve(MultiResolver* resolver) {
-  if (is_canceled())  {
+void ClusterConnector::on_resolve(ClusterMetadataResolver* resolver) {
+  if (is_canceled()) {
     finish();
     return;
   }
 
-  const Resolver::Vec& resolvers = resolver->resolvers();
-  for (Resolver::Vec::const_iterator it = resolvers.begin(),
-       end = resolvers.end(); it != end; ++it) {
-    const Resolver::Ptr resolver(*it);
-    if (resolver->is_success()) {
-      const AddressVec& addresses = resolver->addresses();
-      if (!addresses.empty()) {
-        for (AddressVec::const_iterator it = addresses.begin(),
-             end = addresses.end(); it != end;  ++it) {
-          contact_points_resolved_.push_back(*it);
-        }
-      } else {
-        LOG_ERROR("No addresses resolved for %s:%d\n",
-                  resolver->hostname().c_str(), resolver->port());
-      }
-    } else if (resolver->is_timed_out()) {
-      LOG_ERROR("Timed out attempting to resolve address for %s:%d\n",
-                resolver->hostname().c_str(), resolver->port());
-    } else if (!resolver->is_canceled()) {
-      LOG_ERROR("Unable to resolve address for %s:%d\n",
-                resolver->hostname().c_str(), resolver->port());
-    }
+  const AddressVec& resolved_contact_points(resolver->resolved_contact_points());
+
+  if (resolved_contact_points.empty()) {
+    error_code_ = CLUSTER_ERROR_NO_HOSTS_AVAILABLE;
+    error_message_ = "Unable to connect to any contact points";
+    finish();
+    return;
   }
 
-  internal_connect_all();
+  local_dc_ = resolver->local_dc();
+  remaining_connector_count_ = resolved_contact_points.size();
+  for (AddressVec::const_iterator it = resolved_contact_points.begin(),
+                                  end = resolved_contact_points.end();
+       it != end; ++it) {
+    internal_connect(*it, protocol_version_);
+  }
 }
 
 void ClusterConnector::on_connect(ControlConnector* connector) {
   if (!connector->is_ok() && !connector->is_canceled()) {
-    LOG_ERROR("Unable to establish a control connection to host %s because of the following error: %s",
-              connector->address().to_string().c_str(),
-              connector->error_message().c_str());
+    LOG_ERROR(
+        "Unable to establish a control connection to host %s because of the following error: %s",
+        connector->address().to_string().c_str(), connector->error_message().c_str());
   }
 
   // If the cluster object is successfully initialized or if the connector is
@@ -268,15 +221,16 @@ void ClusterConnector::on_connect(ControlConnector* connector) {
     LoadBalancingPolicy::Ptr default_policy(settings_.load_balancing_policy->new_instance());
     policies.push_back(default_policy);
     for (LoadBalancingPolicy::Vec::const_iterator it = settings_.load_balancing_policies.begin(),
-         end = settings_.load_balancing_policies.end(); it != end; ++it) {
+                                                  end = settings_.load_balancing_policies.end();
+         it != end; ++it) {
       policies.push_back(LoadBalancingPolicy::Ptr((*it)->new_instance()));
     }
 
     // Initialize all created policies
-    for (LoadBalancingPolicy::Vec::const_iterator it = policies.begin(),
-         end = policies.end(); it != end; ++it) {
+    for (LoadBalancingPolicy::Vec::const_iterator it = policies.begin(), end = policies.end();
+         it != end; ++it) {
       LoadBalancingPolicy::Ptr policy(*it);
-      policy->init(connected_host, hosts, random_);
+      policy->init(connected_host, hosts, random_, local_dc_);
       policy->register_handles(event_loop_->loop());
     }
 
@@ -288,27 +242,22 @@ void ClusterConnector::on_connect(ControlConnector* connector) {
                 connector->address().to_string().c_str());
 
       const char* message;
-      if (dynamic_cast<DCAwarePolicy::DCAwareQueryPlan*>(query_plan.get()) != NULL) { // Check if DC-aware
-        message = "No hosts available for the control connection using the " \
-                  "DC-aware load balancing policy. " \
+      if (dynamic_cast<DCAwarePolicy::DCAwareQueryPlan*>(query_plan.get()) !=
+          NULL) { // Check if DC-aware
+        message = "No hosts available for the control connection using the "
+                  "DC-aware load balancing policy. "
                   "Check to see if the configured local datacenter is valid";
       } else {
-        message = "No hosts available for the control connection using the " \
+        message = "No hosts available for the control connection using the "
                   "configured load balancing policy";
       }
       on_error(CLUSTER_ERROR_NO_HOSTS_AVAILABLE, message);
       return;
     }
 
-    cluster_.reset(new Cluster(connector->release_connection(),
-                               listener_,
-                               event_loop_,
-                               connected_host,
-                               hosts,
-                               connector->schema(),
-                               default_policy,
-                               policies,
-                               settings_));
+    cluster_.reset(new Cluster(connector->release_connection(), listener_, event_loop_,
+                               connected_host, hosts, connector->schema(), default_policy, policies,
+                               local_dc_, connector->supported_options(), settings_));
 
     // Clear any connection errors and set the final negotiated protocol version.
     error_code_ = CLUSTER_OK;
@@ -316,8 +265,8 @@ void ClusterConnector::on_connect(ControlConnector* connector) {
     protocol_version_ = connector->protocol_version();
 
     // The cluster is initialized so the rest of the connectors can be canceled.
-    for (ConnectorMap::iterator it = connectors_.begin(),
-         end = connectors_.end(); it != end; ++it) {
+    for (ConnectorMap::iterator it = connectors_.begin(), end = connectors_.end(); it != end;
+         ++it) {
       if (it->first != connector->address()) { // Not the current connector.
         it->second->cancel();
       }
@@ -327,15 +276,14 @@ void ClusterConnector::on_connect(ControlConnector* connector) {
   } else if (connector->is_invalid_protocol()) {
     ProtocolVersion lower_version(connector->protocol_version());
     if (!lower_version.attempt_lower_supported(connector->address().to_string())) {
-      on_error(CLUSTER_ERROR_INVALID_PROTOCOL,
-               "Unable to find supported protocol version");
+      on_error(CLUSTER_ERROR_INVALID_PROTOCOL, "Unable to find supported protocol version");
       return;
     }
     internal_connect(connector->address(), lower_version);
-  } else if(connector->is_ssl_error()) {
+  } else if (connector->is_ssl_error()) {
     ssl_error_code_ = connector->ssl_error_code();
     on_error(CLUSTER_ERROR_SSL_ERROR, connector->error_message());
-  } else if(connector->is_auth_error()) {
+  } else if (connector->is_auth_error()) {
     on_error(CLUSTER_ERROR_AUTH_ERROR, connector->error_message());
   } else {
     assert(!connector->is_canceled() &&
@@ -343,5 +291,3 @@ void ClusterConnector::on_connect(ControlConnector* connector) {
     on_error(CLUSTER_ERROR_NO_HOSTS_AVAILABLE, connector->error_message());
   }
 }
-
-} // namespace cass

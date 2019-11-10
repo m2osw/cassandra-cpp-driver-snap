@@ -14,30 +14,31 @@
   limitations under the License.
 */
 
-#ifndef __CASS_BATCH_REQUEST_HPP_INCLUDED__
-#define __CASS_BATCH_REQUEST_HPP_INCLUDED__
+#ifndef DATASTAX_INTERNAL_BATCH_REQUEST_HPP
+#define DATASTAX_INTERNAL_BATCH_REQUEST_HPP
 
 #include "cassandra.h"
 #include "constants.hpp"
 #include "external.hpp"
 #include "map.hpp"
-#include "request.hpp"
 #include "ref_counted.hpp"
+#include "request.hpp"
 #include "statement.hpp"
 #include "string.hpp"
 #include "vector.hpp"
 
-namespace cass {
+namespace datastax { namespace internal { namespace core {
 
 class ExecuteRequest;
 
 class BatchRequest : public RoutableRequest {
 public:
+  typedef SharedRefPtr<BatchRequest> Ptr;
   typedef Vector<Statement::Ptr> StatementVec;
 
-  BatchRequest(uint8_t type_)
+  BatchRequest(uint8_t type)
       : RoutableRequest(CQL_OPCODE_BATCH)
-      , type_(type_) { }
+      , type_(type) {}
 
   uint8_t type() const { return type_; }
 
@@ -57,8 +58,8 @@ private:
   StatementVec statements_;
 };
 
-} // namespace cass
+}}} // namespace datastax::internal::core
 
-EXTERNAL_TYPE(cass::BatchRequest, CassBatch)
+EXTERNAL_TYPE(datastax::internal::core::BatchRequest, CassBatch)
 
 #endif

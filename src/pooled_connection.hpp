@@ -14,15 +14,15 @@
   limitations under the License.
 */
 
-#ifndef __CASS_POOLED_CONNECTION_HPP_INCLUDED__
-#define __CASS_POOLED_CONNECTION_HPP_INCLUDED__
+#ifndef DATASTAX_INTERNAL_POOLED_CONNECTION_HPP
+#define DATASTAX_INTERNAL_POOLED_CONNECTION_HPP
 
 #include "atomic.hpp"
 #include "connection.hpp"
 #include "ref_counted.hpp"
 #include "vector.hpp"
 
-namespace cass {
+namespace datastax { namespace internal { namespace core {
 
 class ConnectionPool;
 class EventLoop;
@@ -31,8 +31,9 @@ class RequestCallback;
 /**
  * A connection wrapper that handles connection pool functionality.
  */
-class PooledConnection : public RefCounted<PooledConnection>
-                       , public ConnectionListener {
+class PooledConnection
+    : public RefCounted<PooledConnection>
+    , public ConnectionListener {
 public:
   typedef SharedRefPtr<PooledConnection> Ptr;
   typedef Vector<Ptr> Vec;
@@ -43,18 +44,16 @@ public:
    * @param pool The connection pool of the connection.
    * @param connection The wrapped connection.
    */
-  PooledConnection(ConnectionPool* pool,
-                   const Connection::Ptr& connection);
+  PooledConnection(ConnectionPool* pool, const Connection::Ptr& connection);
 
   /**
    * Writes a request to a connection, but it's not written to the socket until
    * the connection pool manager flushes the request.
    *
    * @param callback A request callback that handles the request.
-   * @return Returns true if the request was written, otherwise, an error
-   * occurred.
+   * @return The number of bytes written, or negative if an error occurred.
    */
-  bool write(RequestCallback* callback);
+  int32_t write(RequestCallback* callback);
 
   /**
    * Flush pending writes.
@@ -73,6 +72,13 @@ public:
    */
   int inflight_request_count() const;
 
+  /**
+   * Determine if the connection is closing.
+   *
+   * @return Returns true if closing.
+   */
+  bool is_closing() const;
+
 public:
   const String& keyspace() const { return connection_->keyspace(); } // Test only
 
@@ -87,6 +93,6 @@ private:
   EventLoop* const event_loop_;
 };
 
-} // namespace cass
+}}} // namespace datastax::internal::core
 
 #endif

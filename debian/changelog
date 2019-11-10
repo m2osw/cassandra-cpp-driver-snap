@@ -1,3 +1,9 @@
+cassandra-cpp-driver-snap (2.14.0.0~xenial) xenial; urgency=high
+
+  * Upgrade to 2.14.0 so we can compile under Ubuntu 19.10.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Sat,  9 Nov 2019 17:18:09 -0800
+
 cassandra-cpp-driver-snap (2.12.0.3~xenial) xenial; urgency=high
 
   * Replaced the "Replaces: ..." with a "Conflicts: ...".

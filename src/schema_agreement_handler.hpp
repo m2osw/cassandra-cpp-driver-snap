@@ -14,21 +14,22 @@
   limitations under the License.
 */
 
-#ifndef __CASS_SCHEMA_CHANGE_HANDLER_HPP_INCLUDED__
-#define __CASS_SCHEMA_CHANGE_HANDLER_HPP_INCLUDED__
+#ifndef DATASTAX_INTERNAL_SCHEMA_CHANGE_HANDLER_HPP
+#define DATASTAX_INTERNAL_SCHEMA_CHANGE_HANDLER_HPP
 
+#include "address_factory.hpp"
 #include "wait_for_handler.hpp"
 
 #include <uv.h>
 
-namespace cass {
+namespace datastax { namespace internal { namespace core {
 
 /**
  * A listener that used for determining if a host is up.
  */
 class SchemaAgreementListener {
 public:
-  virtual ~SchemaAgreementListener() { }
+  virtual ~SchemaAgreementListener() {}
 
   /**
    * A callback for determining if a host is up.
@@ -57,12 +58,11 @@ public:
    * @param listener A listener for determining host liveness.
    * @param max_wait_time_ms The maximum amount of time to wait for the data to
    * become available.
+   * @param address_factory Address factory for determining peer addresses.
    */
-  SchemaAgreementHandler(const RequestHandler::Ptr& request_handler,
-                         const Host::Ptr& current_host,
-                         const Response::Ptr& response,
-                         SchemaAgreementListener* listener,
-                         uint64_t max_wait_time_ms);
+  SchemaAgreementHandler(const RequestHandler::Ptr& request_handler, const Host::Ptr& current_host,
+                         const Response::Ptr& response, SchemaAgreementListener* listener,
+                         uint64_t max_wait_time_ms, const AddressFactory::Ptr& address_factory);
 
   /**
    * Gets a request callback for executing queries on behalf of the handler.
@@ -77,8 +77,9 @@ private:
 
 private:
   SchemaAgreementListener* const listener_;
+  AddressFactory::Ptr address_factory_;
 };
 
-} // namespace cass
+}}} // namespace datastax::internal::core
 
 #endif

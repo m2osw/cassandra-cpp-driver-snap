@@ -16,26 +16,23 @@
 
 #include "host_targeting_policy.hpp"
 
-namespace cass {
+using namespace datastax;
+using namespace datastax::internal;
+using namespace datastax::internal::core;
 
-void HostTargetingPolicy::init(const SharedRefPtr<Host>& connected_host,
-                               const cass::HostMap& hosts,
-                               Random* random) {
-  for (cass::HostMap::const_iterator it = hosts.begin(),
-       end = hosts.end(); it != end; ++it) {
+void HostTargetingPolicy::init(const SharedRefPtr<Host>& connected_host, const core::HostMap& hosts,
+                               Random* random, const String& local_dc) {
+  for (core::HostMap::const_iterator it = hosts.begin(), end = hosts.end(); it != end; ++it) {
     hosts_[it->first] = it->second;
   }
-  ChainedLoadBalancingPolicy::init(connected_host, hosts, random);
+  ChainedLoadBalancingPolicy::init(connected_host, hosts, random, local_dc);
 }
 
 QueryPlan* HostTargetingPolicy::new_query_plan(const String& keyspace,
                                                RequestHandler* request_handler,
                                                const TokenMap* token_map) {
-  QueryPlan* child_plan = child_policy_->new_query_plan(keyspace,
-                                                        request_handler,
-                                                        token_map);
-  if (request_handler == NULL ||
-      !request_handler->preferred_address().is_valid()) {
+  QueryPlan* child_plan = child_policy_->new_query_plan(keyspace, request_handler, token_map);
+  if (request_handler == NULL || !request_handler->preferred_address().is_valid()) {
     return child_plan;
   }
 
@@ -69,5 +66,3 @@ SharedRefPtr<Host> HostTargetingPolicy::HostTargetingQueryPlan::compute_next() {
     return next;
   }
 }
-
-} // namespace cass

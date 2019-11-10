@@ -20,13 +20,14 @@
 #include "protocol.hpp"
 #include "request_callback.hpp"
 
-namespace cass {
+using namespace datastax::internal::core;
 
 ExecuteRequest::ExecuteRequest(const Prepared* prepared)
-  : Statement(prepared)
-  , prepared_(prepared) { }
+    : Statement(prepared)
+    , prepared_(prepared) {}
 
-int ExecuteRequest::encode(ProtocolVersion version, RequestCallback* callback, BufferVec* bufs) const {
+int ExecuteRequest::encode(ProtocolVersion version, RequestCallback* callback,
+                           BufferVec* bufs) const {
   int32_t length = encode_query_or_id(bufs);
   if (version.supports_result_metadata_id()) {
     if (callback->prepared_metadata_entry()) {
@@ -39,12 +40,10 @@ int ExecuteRequest::encode(ProtocolVersion version, RequestCallback* callback, B
       length += bufs->back().size();
     }
   }
-  length += encode_begin(version, elements().size(), callback, bufs);
+  length += encode_begin(version, static_cast<uint16_t>(elements().size()), callback, bufs);
   int32_t result = encode_values(version, callback, bufs);
   if (result < 0) return result;
   length += result;
   length += encode_end(version, callback, bufs);
   return length;
 }
-
-} // namespace cass

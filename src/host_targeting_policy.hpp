@@ -14,26 +14,25 @@
   limitations under the License.
 */
 
-#ifndef __CASS_HOST_TARGETING_POLICY_HPP_INCLUDED__
-#define __CASS_HOST_TARGETING_POLICY_HPP_INCLUDED__
+#ifndef DATASTAX_INTERNAL_HOST_TARGETING_POLICY_HPP
+#define DATASTAX_INTERNAL_HOST_TARGETING_POLICY_HPP
 
 #include "address.hpp"
 #include "dense_hash_map.hpp"
 #include "load_balancing.hpp"
 #include "request_handler.hpp"
 
-namespace cass {
+namespace datastax { namespace internal { namespace core {
 
 class HostTargetingPolicy : public ChainedLoadBalancingPolicy {
 public:
   HostTargetingPolicy(LoadBalancingPolicy* child_policy)
-    : ChainedLoadBalancingPolicy(child_policy) { }
+      : ChainedLoadBalancingPolicy(child_policy) {}
 
-  virtual void init(const SharedRefPtr<Host>& connected_host,
-                    const cass::HostMap& hosts, Random* random);
+  virtual void init(const SharedRefPtr<Host>& connected_host, const HostMap& hosts, Random* random,
+                    const String& local_dc);
 
-  virtual QueryPlan* new_query_plan(const String& keyspace,
-                                    RequestHandler* request_handler,
+  virtual QueryPlan* new_query_plan(const String& keyspace, RequestHandler* request_handler,
                                     const TokenMap* token_map);
 
   virtual LoadBalancingPolicy* new_instance() {
@@ -47,9 +46,9 @@ private:
   class HostTargetingQueryPlan : public QueryPlan {
   public:
     HostTargetingQueryPlan(const Host::Ptr& preferred_host, QueryPlan* child_plan)
-      : first_(true)
-      , preferred_host_(preferred_host)
-      , child_plan_(child_plan) { }
+        : first_(true)
+        , preferred_host_(preferred_host)
+        , child_plan_(child_plan) {}
 
     virtual SharedRefPtr<Host> compute_next();
 
@@ -60,7 +59,7 @@ private:
   };
 
 private:
-  class HostMap : public DenseHashMap<Address, Host::Ptr, AddressHash> {
+  class HostMap : public DenseHashMap<Address, Host::Ptr> {
   public:
     HostMap() {
       set_empty_key(Address::EMPTY_KEY);
@@ -70,6 +69,6 @@ private:
   HostMap hosts_;
 };
 
-} // namespace cass
+}}} // namespace datastax::internal::core
 
 #endif

@@ -51,6 +51,7 @@ provided with the distribution:
 * [Reverse DNS] with SSL peer identity verification support
 * Randomized contact points
 * [Speculative execution]
+* Support for [DataStax Constellation] Cloud Data Platform
 
 ## Compatibility
 
@@ -78,7 +79,6 @@ __Disclaimer__: DataStax products do not support big-endian systems.
 
 * JIRA: https://datastax-oss.atlassian.net/browse/CPP
 * Mailing List: https://groups.google.com/a/lists.datastax.com/forum/#!forum/cpp-driver-user
-* DataStax Academy via Slack: https://academy.datastax.com/slack
 
 ## Feedback Requested
 
@@ -166,25 +166,25 @@ int main(int argc, char* argv[]) {
 ```
 
 ## License
-Copyright (c) DataStax, Inc.
 
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
+&copy; DataStax, Inc.
+
+Licensed under the Apache License, Version 2.0 (the “License”); you may not use
+this file except in compliance with the License. You may obtain a copy of the
+License at
 
 http://www.apache.org/licenses/LICENSE-2.0
 
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
+Unless required by applicable law or agreed to in writing, software distributed
+under the License is distributed on an “AS IS” BASIS, WITHOUT WARRANTIES OR
+CONDITIONS OF ANY KIND, either express or implied. See the License for the
+specific language governing permissions and limitations under the License.
 
 [Apache Cassandra]: http://cassandra.apache.org
 [DSE C/C++ driver]: http://docs.datastax.com/en/developer/cpp-driver-dse/latest
 [DataStax Enterprise]: http://www.datastax.com/products/datastax-enterprise
 [Examples]: examples/
-[download server]: http://downloads.datastax.com/cpp-driver
+[download server]: http://downloads.datastax.com/cpp-driver/
 [GitHub]: https://github.com/datastax/cpp-driver
 [cpp-driver-compatability-matrix]: https://docs.datastax.com/en/developer/driver-matrix/doc/cppDrivers.html#cpp-drivers
 [Home]: http://docs.datastax.com/en/developer/cpp-driver/latest
@@ -198,6 +198,7 @@ limitations under the License.
 [ubuntu-16-04-dependencies]: http://downloads.datastax.com/cpp-driver/ubuntu/16.04/dependencies
 [ubuntu-18-04-dependencies]: http://downloads.datastax.com/cpp-driver/ubuntu/18.04/dependencies
 [windows-dependencies]: http://downloads.datastax.com/cpp-driver/windows/dependencies
+[DataStax Constellation]: https://constellation.datastax.com
 
 [Asynchronous API]: http://datastax.github.io/cpp-driver/topics/#futures
 [Simple]: http://datastax.github.io/cpp-driver/topics/#executing-queries

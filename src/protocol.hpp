@@ -14,14 +14,14 @@
   limitations under the License.
 */
 
-#ifndef __CASS_PROTOCOL_HPP_INCLUDED__
-#define __CASS_PROTOCOL_HPP_INCLUDED__
+#ifndef DATASTAX_INTERNAL_PROTOCOL_HPP
+#define DATASTAX_INTERNAL_PROTOCOL_HPP
 
 #include "cassandra.h"
 #include "constants.hpp"
 #include "string.hpp"
 
-namespace cass {
+namespace datastax { namespace internal { namespace core {
 
 /**
  * A type that represents the protocol version for Cassandra/DSE.
@@ -84,6 +84,13 @@ public:
   bool is_valid() const;
 
   /**
+   * Check to see if the protocol version's value is DSE.
+   *
+   * @return true if DSE, otherwise false;
+   */
+  bool is_dse() const;
+
+  /**
    * Check to see if the protocol version is a beta version.
    *
    * @return true if a beta version, otherwise false.
@@ -135,6 +142,6 @@ private:
   int value_;
 };
 
-} // namespace cass
+}}} // namespace datastax::internal::core
 
 #endif

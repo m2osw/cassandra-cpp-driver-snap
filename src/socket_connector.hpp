@@ -14,15 +14,17 @@
   limitations under the License.
 */
 
-#ifndef __CASS_SOCKET_CONNECTOR_HPP_INCLUDED__
-#define __CASS_SOCKET_CONNECTOR_HPP_INCLUDED__
+#ifndef DATASTAX_INTERNAL_SOCKET_CONNECTOR_HPP
+#define DATASTAX_INTERNAL_SOCKET_CONNECTOR_HPP
 
+#include "atomic.hpp"
 #include "callback.hpp"
 #include "name_resolver.hpp"
+#include "resolver.hpp"
 #include "socket.hpp"
 #include "tcp_connector.hpp"
 
-namespace cass {
+namespace datastax { namespace internal { namespace core {
 
 class Config;
 
@@ -62,7 +64,7 @@ class SocketConnector : public RefCounted<SocketConnector> {
 public:
   typedef SharedRefPtr<SocketConnector> Ptr;
 
-  typedef cass::Callback<void, SocketConnector*> Callback;
+  typedef internal::Callback<void, SocketConnector*> Callback;
 
   enum SocketError {
     SOCKET_OK,
@@ -117,7 +119,6 @@ public:
   Socket::Ptr release_socket();
 
 public:
-  const Address& address() { return address_; }
   const String& hostname() { return hostname_; }
 
   ScopedPtr<SslSession>& ssl_session() { return ssl_session_; }
@@ -126,17 +127,12 @@ public:
   const String& error_message() { return error_message_; }
   CassError ssl_error_code() { return ssl_error_code_; }
 
-  bool is_ok() const {
-    return error_code_ == SOCKET_OK;
-  }
+  bool is_ok() const { return error_code_ == SOCKET_OK; }
 
-  bool is_canceled() const {
-    return error_code_ == SOCKET_CANCELED;
-  }
+  bool is_canceled() const { return error_code_ == SOCKET_CANCELED; }
 
   bool is_ssl_error() const {
-    return error_code_ == SOCKET_ERROR_SSL_HANDSHAKE ||
-        error_code_ == SOCKET_ERROR_SSL_VERIFY;
+    return error_code_ == SOCKET_ERROR_SSL_HANDSHAKE || error_code_ == SOCKET_ERROR_SSL_VERIFY;
   }
 
 private:
@@ -146,17 +142,23 @@ private:
 
   void on_error(SocketError code, const String& message);
   void on_connect(TcpConnector* tcp_connecter);
-  void on_resolve(NameResolver* resolver);
+  void on_resolve(Resolver* resolver);
+  void on_name_resolve(NameResolver* resolver);
   void on_no_resolve(Timer* timer);
 
 private:
+  static Atomic<size_t> resolved_address_offset_;
+
+private:
   Address address_;
+  Address resolved_address_;
   String hostname_;
   Callback callback_;
 
   Socket::Ptr socket_;
   TcpConnector::Ptr connector_;
-  NameResolver::Ptr resolver_;
+  Resolver::Ptr resolver_;
+  NameResolver::Ptr name_resolver_;
   Timer no_resolve_timer_;
 
   SocketError error_code_;
@@ -168,6 +170,6 @@ private:
   SocketSettings settings_;
 };
 
-} // namespace cass
+}}} // namespace datastax::internal::core
 
 #endif

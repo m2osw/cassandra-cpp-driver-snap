@@ -14,8 +14,8 @@
   limitations under the License.
 */
 
-#ifndef __CASS_HOST_HPP_INCLUDED__
-#define __CASS_HOST_HPP_INCLUDED__
+#ifndef DATASTAX_INTERNAL_HOST_HPP
+#define DATASTAX_INTERNAL_HOST_HPP
 
 #include "address.hpp"
 #include "allocated.hpp"
@@ -33,15 +33,15 @@
 #include <math.h>
 #include <stdint.h>
 
-namespace cass {
+namespace datastax { namespace internal { namespace core {
 
 class Row;
 
 struct TimestampedAverage {
   TimestampedAverage()
-    : average(-1)
-    , timestamp(0)
-    , num_measured(0) { }
+      : average(-1)
+      , timestamp(0)
+      , num_measured(0) {}
 
   int64_t average;
   uint64_t timestamp;
@@ -51,32 +51,28 @@ struct TimestampedAverage {
 class VersionNumber {
 public:
   VersionNumber()
-    : major_version_(0)
-    , minor_version_(0)
-    , patch_version_(0) { }
+      : major_version_(0)
+      , minor_version_(0)
+      , patch_version_(0) {}
 
   VersionNumber(int major_version, int minor_version, int patch_version)
-    : major_version_(major_version)
-    , minor_version_(minor_version)
-    , patch_version_(patch_version) { }
+      : major_version_(major_version)
+      , minor_version_(minor_version)
+      , patch_version_(patch_version) {}
 
-  bool operator >=(const VersionNumber& other) const {
-    return compare(other) >= 0;
-  }
+  bool operator>=(const VersionNumber& other) const { return compare(other) >= 0; }
 
-  bool operator <(const VersionNumber& other) const {
-    return compare(other) < 0;
-  }
+  bool operator<(const VersionNumber& other) const { return compare(other) < 0; }
 
   int compare(const VersionNumber& other) const {
     if (major_version_ < other.major_version_) return -1;
-    if (major_version_ > other.major_version_) return  1;
+    if (major_version_ > other.major_version_) return 1;
 
     if (minor_version_ < other.minor_version_) return -1;
-    if (minor_version_ > other.minor_version_) return  1;
+    if (minor_version_ > other.minor_version_) return 1;
 
     if (patch_version_ < other.patch_version_) return -1;
-    if (patch_version_ > other.patch_version_) return  1;
+    if (patch_version_ > other.patch_version_) return 1;
 
     return 0;
   }
@@ -100,14 +96,17 @@ public:
 
   Host(const Address& address)
       : address_(address)
+      , rpc_address_(address)
       , rack_id_(0)
       , dc_id_(0)
       , address_string_(address.to_string())
       , connection_count_(0)
-      , inflight_request_count_(0) { }
+      , inflight_request_count_(0) {}
 
   const Address& address() const { return address_; }
   const String& address_string() const { return address_string_; }
+
+  const Address& rpc_address() const { return rpc_address_; }
 
   void set(const Row* row, bool use_tokens);
 
@@ -125,21 +124,13 @@ public:
     dc_id_ = dc_id;
   }
 
-  const String& partitioner() const {
-    return partitioner_;
-  }
+  const String& partitioner() const { return partitioner_; }
 
-  const Vector<String>& tokens() const {
-    return tokens_;
-  }
+  const Vector<String>& tokens() const { return tokens_; }
 
-  const VersionNumber& server_version() const {
-    return server_version_;
-  }
+  const VersionNumber& server_version() const { return server_version_; }
 
-  const VersionNumber& dse_server_version() const {
-    return dse_server_version_;
-  }
+  const VersionNumber& dse_server_version() const { return dse_server_version_; }
 
   String to_string() const {
     OStringStream ss;
@@ -170,25 +161,15 @@ public:
     return TimestampedAverage();
   }
 
-  void increment_connection_count() {
-    connection_count_.fetch_add(1, MEMORY_ORDER_RELAXED);
-  }
+  void increment_connection_count() { connection_count_.fetch_add(1, MEMORY_ORDER_RELAXED); }
 
-  void decrement_connection_count() {
-    connection_count_.fetch_sub(1, MEMORY_ORDER_RELAXED);
-  }
+  void decrement_connection_count() { connection_count_.fetch_sub(1, MEMORY_ORDER_RELAXED); }
 
-  int32_t connection_count() const {
-    return connection_count_.load(MEMORY_ORDER_RELAXED);
-  }
+  int32_t connection_count() const { return connection_count_.load(MEMORY_ORDER_RELAXED); }
 
-  void increment_inflight_requests() {
-    inflight_request_count_.fetch_add(1, MEMORY_ORDER_RELAXED);
-  }
+  void increment_inflight_requests() { inflight_request_count_.fetch_add(1, MEMORY_ORDER_RELAXED); }
 
-  void decrement_inflight_requests() {
-    inflight_request_count_.fetch_sub(1, MEMORY_ORDER_RELAXED);
-  }
+  void decrement_inflight_requests() { inflight_request_count_.fetch_sub(1, MEMORY_ORDER_RELAXED); }
 
   int32_t inflight_request_count() const {
     return inflight_request_count_.load(MEMORY_ORDER_RELAXED);
@@ -198,8 +179,8 @@ private:
   class LatencyTracker : public Allocated {
   public:
     LatencyTracker(uint64_t scale_ns, uint64_t threshold_to_account)
-      : scale_ns_(scale_ns)
-      , threshold_to_account_(threshold_to_account) { }
+        : scale_ns_(scale_ns)
+        , threshold_to_account_(threshold_to_account) {}
 
     void update(uint64_t latency_ns);
 
@@ -219,6 +200,7 @@ private:
 
 private:
   Address address_;
+  Address rpc_address_;
   uint32_t rack_id_;
   uint32_t dc_id_;
   String address_string_;
@@ -242,7 +224,7 @@ private:
  */
 class HostListener {
 public:
-  virtual ~HostListener() { }
+  virtual ~HostListener() {}
 
   /**
    * A callback that's called when a host is marked as being UP.
@@ -279,17 +261,16 @@ class DefaultHostListener
 public:
   typedef SharedRefPtr<DefaultHostListener> Ptr;
 
-  virtual void on_host_up(const Host::Ptr& host) { }
-  virtual void on_host_down(const Host::Ptr& host) { }
-  virtual void on_host_added(const Host::Ptr& host) { }
-  virtual void on_host_removed(const Host::Ptr& host) { }
+  virtual void on_host_up(const Host::Ptr& host) {}
+  virtual void on_host_down(const Host::Ptr& host) {}
+  virtual void on_host_added(const Host::Ptr& host) {}
+  virtual void on_host_removed(const Host::Ptr& host) {}
 };
 
-class ExternalHostListener : public DefaultHostListener  {
+class ExternalHostListener : public DefaultHostListener {
 public:
   typedef SharedRefPtr<ExternalHostListener> Ptr;
-  ExternalHostListener(const CassHostListenerCallback callback,
-                       void *data);
+  ExternalHostListener(const CassHostListenerCallback callback, void* data);
 
   virtual void on_host_up(const Host::Ptr& host);
   virtual void on_host_down(const Host::Ptr& host);
@@ -305,16 +286,12 @@ typedef Map<Address, Host::Ptr> HostMap;
 
 struct GetAddress {
   typedef std::pair<Address, Host::Ptr> Pair;
-  const Address& operator()(const Pair& pair) const {
-    return pair.first;
-  }
+  const Address& operator()(const Pair& pair) const { return pair.first; }
 };
 
 struct GetHost {
   typedef std::pair<Address, Host::Ptr> Pair;
-  Host::Ptr operator()(const Pair& pair) const {
-    return pair.second;
-  }
+  Host::Ptr operator()(const Pair& pair) const { return pair.second; }
 };
 
 typedef std::pair<Address, Host::Ptr> HostPair;
@@ -325,6 +302,6 @@ void add_host(CopyOnWriteHostVec& hosts, const Host::Ptr& host);
 void remove_host(CopyOnWriteHostVec& hosts, const Host::Ptr& host);
 bool remove_host(CopyOnWriteHostVec& hosts, const Address& address);
 
-} // namespace cass
+}}} // namespace datastax::internal::core
 
 #endif

@@ -14,8 +14,8 @@
   limitations under the License.
 */
 
-#ifndef __CASS_REQUEST_HPP_INCLUDED__
-#define __CASS_REQUEST_HPP_INCLUDED__
+#ifndef DATASTAX_INTERNAL_REQUEST_HPP
+#define DATASTAX_INTERNAL_REQUEST_HPP
 
 #include "buffer.hpp"
 #include "cassandra.h"
@@ -31,7 +31,7 @@
 #include <stdint.h>
 #include <utility>
 
-namespace cass {
+namespace datastax { namespace internal { namespace core {
 
 class RequestCallback;
 
@@ -39,24 +39,18 @@ class CustomPayload : public RefCounted<CustomPayload> {
 public:
   typedef SharedRefPtr<const CustomPayload> ConstPtr;
 
-  virtual ~CustomPayload() { }
+  virtual ~CustomPayload() {}
 
-  void set(const char* name, size_t name_length,
-           const uint8_t* value, size_t value_size);
+  void set(const char* name, size_t name_length, const uint8_t* value, size_t value_size);
 
-  void remove(const char* name, size_t name_length) {
-    items_.erase(String(name, name_length));
-  }
+  void remove(const char* name, size_t name_length) { items_.erase(String(name, name_length)); }
 
   int32_t encode(BufferVec* bufs) const;
 
-  inline bool empty() const {
-    return items_.empty();
-  }
+  inline bool empty() const { return items_.empty(); }
 
-  inline size_t size() const {
-    return items_.size();
-  }
+  inline size_t size() const { return items_.size(); }
+
 private:
   typedef Map<String, Buffer> ItemMap;
   ItemMap items_;
@@ -67,10 +61,10 @@ private:
 // be updated to reflect the new inherited setting(s).
 struct RequestSettings {
   RequestSettings()
-    : consistency(CASS_CONSISTENCY_UNKNOWN)
-    , serial_consistency(CASS_CONSISTENCY_UNKNOWN)
-    , request_timeout_ms(CASS_UINT64_MAX)
-    , is_idempotent(false) { }
+      : consistency(CASS_CONSISTENCY_UNKNOWN)
+      , serial_consistency(CASS_CONSISTENCY_UNKNOWN)
+      , request_timeout_ms(CASS_UINT64_MAX)
+      , is_idempotent(false) {}
   CassConsistency consistency;
   CassConsistency serial_consistency;
   uint64_t request_timeout_ms;
@@ -87,16 +81,17 @@ public:
     REQUEST_ERROR_UNSUPPORTED_PROTOCOL = SocketRequest::SOCKET_REQUEST_ERROR_LAST_ENTRY,
     REQUEST_ERROR_BATCH_WITH_NAMED_VALUES,
     REQUEST_ERROR_PARAMETER_UNSET,
-    REQUEST_ERROR_NO_AVAILABLE_STREAM_IDS
+    REQUEST_ERROR_NO_AVAILABLE_STREAM_IDS,
+    REQUEST_ERROR_NO_DATA_WRITTEN
   };
 
   Request(uint8_t opcode)
       : opcode_(opcode)
       , flags_(0)
       , timestamp_(CASS_INT64_MIN)
-      , record_attempted_addresses_(false) { }
+      , record_attempted_addresses_(false) {}
 
-  virtual ~Request() { }
+  virtual ~Request() {}
 
   uint8_t opcode() const { return opcode_; }
 
@@ -130,13 +125,9 @@ public:
     settings_.request_timeout_ms = request_timeout_ms;
   }
 
-  const RetryPolicy::Ptr& retry_policy() const {
-    return settings_.retry_policy;
-  }
+  const RetryPolicy::Ptr& retry_policy() const { return settings_.retry_policy; }
 
-  void set_retry_policy(RetryPolicy* retry_policy) {
-    settings_.retry_policy.reset(retry_policy);
-  }
+  void set_retry_policy(RetryPolicy* retry_policy) { settings_.retry_policy.reset(retry_policy); }
 
   bool is_idempotent() const {
     // Prepare requests are idempotent and should be retried regardless of the
@@ -160,31 +151,21 @@ public:
     record_attempted_addresses_ = record_attempted_addresses;
   }
 
-  const CustomPayload::ConstPtr& custom_payload() const {
-    return custom_payload_;
-  }
+  const CustomPayload::ConstPtr& custom_payload() const { return custom_payload_; }
 
-  bool has_custom_payload() const {
-    return custom_payload_ || !custom_payload_extra_.empty();
-  }
+  bool has_custom_payload() const { return custom_payload_ || !custom_payload_extra_.empty(); }
 
-  void set_custom_payload(const CustomPayload* payload) {
-    custom_payload_.reset(payload);
-  }
+  void set_custom_payload(const CustomPayload* payload) { custom_payload_.reset(payload); }
 
   void set_custom_payload(const char* key, const uint8_t* value, size_t value_len) {
     custom_payload_extra_.set(key, strlen(key), value, value_len);
   }
 
-  bool has_execution_profile() const {
-    return !profile_name_.empty();
-  }
+  bool has_execution_profile() const { return !profile_name_.empty(); }
 
   const String& execution_profile_name() const { return profile_name_; }
 
-  void set_execution_profile_name(const String& name) {
-    profile_name_ = name;
-  }
+  void set_execution_profile_name(const String& name) { profile_name_ = name; }
 
   int32_t encode_custom_payload(BufferVec* bufs) const {
     int32_t length = sizeof(uint16_t);
@@ -203,9 +184,7 @@ public:
     return length;
   }
 
-  void set_host(const Address& host) {
-    host_.reset(new Address(host));
-  }
+  void set_host(const Address& host) { host_.reset(new Address(host)); }
   const Address* host() const { return host_.get(); }
 
   virtual int encode(ProtocolVersion version, RequestCallback* callback, BufferVec* bufs) const = 0;
@@ -228,14 +207,13 @@ private:
 class RoutableRequest : public Request {
 public:
   RoutableRequest(uint8_t opcode)
-    : Request(opcode) { }
+      : Request(opcode) {}
 
   virtual bool get_routing_key(String* routing_key) const = 0;
 };
 
-} // namespace cass
+}}} // namespace datastax::internal::core
 
-EXTERNAL_TYPE(cass::CustomPayload, CassCustomPayload)
-
+EXTERNAL_TYPE(datastax::internal::core::CustomPayload, CassCustomPayload)
 
 #endif

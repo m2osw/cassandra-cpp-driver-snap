@@ -14,15 +14,15 @@
   limitations under the License.
 */
 
-#ifndef __CASS_SUPPORTED_RESPONSE_HPP_INCLUDED__
-#define __CASS_SUPPORTED_RESPONSE_HPP_INCLUDED__
+#ifndef DATASTAX_INTERNAL_SUPPORTED_RESPONSE_HPP
+#define DATASTAX_INTERNAL_SUPPORTED_RESPONSE_HPP
 
-#include "response.hpp"
 #include "constants.hpp"
+#include "response.hpp"
 #include "string.hpp"
 #include "vector.hpp"
 
-namespace cass {
+namespace datastax { namespace internal { namespace core {
 
 class SupportedResponse : public Response {
 public:
@@ -31,16 +31,17 @@ public:
 
   virtual bool decode(Decoder& decoder);
 
-  const Vector<String> compression() { return compression_; }
-  const Vector<String> cql_versions() { return cql_versions_; }
-  const Vector<String> protocol_versions() { return protocol_versions_; }
+  /**
+   * Get the supported options provided by the server.
+   *
+   * @return Supported options; all keys are normalized (uppercase).
+   */
+  const StringMultimap& supported_options() const { return supported_options_; }
 
 private:
-  Vector<String> compression_;
-  Vector<String> cql_versions_;
-  Vector<String> protocol_versions_;
+  StringMultimap supported_options_;
 };
 
-} // namespace cass
+}}} // namespace datastax::internal::core
 
 #endif

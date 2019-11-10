@@ -19,10 +19,10 @@
 #include "connection.hpp"
 #include "socket_connector.hpp"
 
-#ifndef __CASS_CONNECTION_CONNECTOR_HPP_INCLUDED__
-#define __CASS_CONNECTION_CONNECTOR_HPP_INCLUDED__
+#ifndef DATASTAX_INTERNAL_CONNECTION_CONNECTOR_HPP
+#define DATASTAX_INTERNAL_CONNECTION_CONNECTOR_HPP
 
-namespace cass {
+namespace datastax { namespace internal { namespace core {
 
 class AuthResponseRequest;
 class Config;
@@ -69,7 +69,7 @@ public:
   typedef SharedRefPtr<Connector> Ptr;
   typedef Vector<Ptr> Vec;
 
-  typedef cass::Callback<void, Connector*> Callback;
+  typedef internal::Callback<void, Connector*> Callback;
 
   enum ConnectionError {
     CONNECTION_OK,
@@ -97,9 +97,7 @@ public:
    * @param callback A callback that is called when the connection is connected or
    * if an error occurred.
    */
-  Connector(const Host::Ptr& host,
-            ProtocolVersion protocol_version,
-            const Callback& callback);
+  Connector(const Host::Ptr& host, ProtocolVersion protocol_version, const Callback& callback);
 
   /**
    * Set the keyspace to connect with. Calls "USE <keyspace>" after
@@ -166,36 +164,24 @@ public:
 public:
   uv_loop_t* loop() { return loop_; }
 
-  const Address& address() const { return socket_connector_->address(); }
+  const Address& address() const { return host_->address(); }
   const ProtocolVersion protocol_version() const { return protocol_version_; }
 
-
-  bool is_ok() const {
-    return error_code_ == CONNECTION_OK;
-  }
-  bool is_canceled() const {
-    return error_code_ == CONNECTION_CANCELED;
-  }
-  bool is_invalid_protocol() const {
-    return error_code_ == CONNECTION_ERROR_INVALID_PROTOCOL;
-  }
-  bool is_auth_error() const {
-    return error_code_ == CONNECTION_ERROR_AUTH;
-  }
+  bool is_ok() const { return error_code_ == CONNECTION_OK; }
+  bool is_canceled() const { return error_code_ == CONNECTION_CANCELED; }
+  bool is_invalid_protocol() const { return error_code_ == CONNECTION_ERROR_INVALID_PROTOCOL; }
+  bool is_auth_error() const { return error_code_ == CONNECTION_ERROR_AUTH; }
   bool is_ssl_error() const {
     return error_code_ == CONNECTION_ERROR_SSL_HANDSHAKE ||
-        error_code_ == CONNECTION_ERROR_SSL_VERIFY;
+           error_code_ == CONNECTION_ERROR_SSL_VERIFY;
   }
-  bool is_timeout_error() const {
-    return error_code_ == CONNECTION_ERROR_TIMEOUT;
-  }
-  bool is_keyspace_error() const {
-    return error_code_ == CONNECTION_ERROR_KEYSPACE;
-  }
+  bool is_timeout_error() const { return error_code_ == CONNECTION_ERROR_TIMEOUT; }
+  bool is_keyspace_error() const { return error_code_ == CONNECTION_ERROR_KEYSPACE; }
   bool is_critical_error() const {
-    return is_auth_error() || is_ssl_error() ||
-        is_invalid_protocol() || is_keyspace_error();
+    return is_auth_error() || is_ssl_error() || is_invalid_protocol() || is_keyspace_error();
   }
+
+  const StringMultimap& supported_options() const { return supported_options_; }
 
   ConnectionError error_code() { return error_code_; }
   const String& error_message() { return error_message_; }
@@ -233,6 +219,8 @@ private:
   ConnectionError error_code_;
   String error_message_;
 
+  StringMultimap supported_options_;
+
   ProtocolVersion protocol_version_;
   String keyspace_;
   int event_types_;
@@ -241,6 +229,6 @@ private:
   ConnectionSettings settings_;
 };
 
-} // namespace cass
+}}} // namespace datastax::internal::core
 
 #endif

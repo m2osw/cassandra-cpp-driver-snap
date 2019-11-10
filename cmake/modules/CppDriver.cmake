@@ -123,17 +123,10 @@ macro(CassDoxygen)
   find_package(Doxygen)
   if(DOXYGEN_FOUND)
     configure_file(${CMAKE_CURRENT_SOURCE_DIR}/Doxyfile.in ${CMAKE_CURRENT_BINARY_DIR}/Doxyfile @ONLY)
-    add_custom_command( OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/doxygen/html/index.html
-        COMMAND ${DOXYGEN_EXECUTABLE} ${CMAKE_CURRENT_BINARY_DIR}/Doxyfile
+    add_custom_target(docs
+        ${DOXYGEN_EXECUTABLE} ${CMAKE_CURRENT_BINARY_DIR}/Doxyfile
         WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
-        COMMENT "Generating API documentation with Doxygen" VERBATIM
-    )
-    add_custom_target(docs ALL
-        DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/doxygen/html/index.html
-    )
-    install( DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/doxygen/html
-        DESTINATION share/doc/cassandra-cpp-driver-snap/
-    )
+        COMMENT "Generating API documentation with Doxygen" VERBATIM)
   endif()
 endmacro()
 
@@ -145,21 +138,32 @@ endmacro()
 # Arguments:
 #    prefix - prefix of global variable names that contain specific
 #        info on building the library (e.g. CASS or DSE).
-# Input: PROJECT_LIB_NAME, PROJECT_VERSION_STRING, PROJECT_VERSION_MAJOR,
-#        PROJECT_CXX_LINKER_FLAGS, *_DRIVER_CXX_FLAGS
-# Output: CASS_INCLUDES and CASS_LIBS
+# Input: PROJECT_LIB_NAME, PROJECT_VERSION_STRING, PROJECT_VERSION_MAJOR
 #------------------------
 macro(CassConfigureShared prefix)
   target_link_libraries(${PROJECT_LIB_NAME} ${${prefix}_LIBS})
   set_target_properties(${PROJECT_LIB_NAME} PROPERTIES OUTPUT_NAME ${PROJECT_LIB_NAME})
   set_target_properties(${PROJECT_LIB_NAME} PROPERTIES VERSION ${PROJECT_VERSION_STRING} SOVERSION ${PROJECT_VERSION_MAJOR})
-  set_target_properties(${PROJECT_LIB_NAME} PROPERTIES LINK_FLAGS "${PROJECT_CXX_LINKER_FLAGS}")
   set_target_properties(${PROJECT_LIB_NAME} PROPERTIES
       COMPILE_PDB_NAME "${PROJECT_LIB_NAME}"
       COMPILE_PDB_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}")
-  set_property(
-      TARGET ${PROJECT_LIB_NAME}
-      APPEND PROPERTY COMPILE_FLAGS "${${prefix}_DRIVER_CXX_FLAGS} -DCASS_BUILDING")
+  set(STATIC_COMPILE_FLAGS "-D${prefix}_BUILDING")
+  if("${prefix}" STREQUAL "DSE")
+    set(STATIC_COMPILE_FLAGS "${STATIC_COMPILE_FLAGS} -DCASS_BUILDING")
+  endif()
+  if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
+    set_property(
+        TARGET ${PROJECT_LIB_NAME}
+        APPEND PROPERTY COMPILE_FLAGS "${STATIC_COMPILE_FLAGS} -Wconversion -Wno-sign-conversion -Wno-shorten-64-to-32 -Wno-undefined-var-template -Werror")
+  elseif("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU") # To many superfluous warnings generated with GCC when using -Wconversion (see: https://gcc.gnu.org/bugzilla/show_bug.cgi?id=40752)
+    set_property(
+        TARGET ${PROJECT_LIB_NAME}
+        APPEND PROPERTY COMPILE_FLAGS "${STATIC_COMPILE_FLAGS} -Werror")
+  elseif("${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC")
+    set_property(
+        TARGET ${PROJECT_LIB_NAME}
+        APPEND PROPERTY COMPILE_FLAGS "${STATIC_COMPILE_FLAGS} /we4800")
+  endif()
 endmacro()
 
 #------------------------
@@ -171,20 +175,38 @@ endmacro()
 #    prefix - prefix of global variable names that contain specific
 #        info on building the library (e.g. CASS or DSE).
 # Input: PROJECT_LIB_NAME_STATIC, PROJECT_VERSION_STRING, PROJECT_VERSION_MAJOR,
-#        PROJECT_CXX_LINKER_FLAGS, *_DRIVER_CXX_FLAGS
-# Output: CASS_INCLUDES and CASS_LIBS
+#        *_USE_STATIC_LIBS
 #------------------------
 macro(CassConfigureStatic prefix)
   target_link_libraries(${PROJECT_LIB_NAME_STATIC} ${${prefix}_LIBS})
   set_target_properties(${PROJECT_LIB_NAME_STATIC} PROPERTIES OUTPUT_NAME ${PROJECT_LIB_NAME_STATIC})
   set_target_properties(${PROJECT_LIB_NAME_STATIC} PROPERTIES VERSION ${PROJECT_VERSION_STRING} SOVERSION ${PROJECT_VERSION_MAJOR})
-  set_target_properties(${PROJECT_LIB_NAME_STATIC} PROPERTIES LINK_FLAGS "${PROJECT_CXX_LINKER_FLAGS}")
   set_target_properties(${PROJECT_LIB_NAME_STATIC} PROPERTIES
       COMPILE_PDB_NAME "${PROJECT_LIB_NAME_STATIC}"
       COMPILE_PDB_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}")
-  set_property(
-      TARGET ${PROJECT_LIB_NAME_STATIC}
-      APPEND PROPERTY COMPILE_FLAGS "${${prefix}_DRIVER_CXX_FLAGS} -DCASS_STATIC")
+  set(STATIC_COMPILE_FLAGS "-D${prefix}_STATIC")
+  if("${prefix}" STREQUAL "DSE")
+    set(STATIC_COMPILE_FLAGS "${STATIC_COMPILE_FLAGS} -DCASS_STATIC")
+  endif()
+  if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
+    set_property(
+        TARGET ${PROJECT_LIB_NAME_STATIC}
+        APPEND PROPERTY COMPILE_FLAGS "${STATIC_COMPILE_FLAGS} -Wconversion -Wno-sign-conversion -Wno-shorten-64-to-32 -Wno-undefined-var-template -Werror")
+  elseif("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU") # To many superfluous warnings generated with GCC when using -Wconversion (see: https://gcc.gnu.org/bugzilla/show_bug.cgi?id=40752)
+    set_property(
+        TARGET ${PROJECT_LIB_NAME_STATIC}
+        APPEND PROPERTY COMPILE_FLAGS "${STATIC_COMPILE_FLAGS} -Werror")
+  elseif("${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC")
+    set_property(
+        TARGET ${PROJECT_LIB_NAME_STATIC}
+        APPEND PROPERTY COMPILE_FLAGS "${STATIC_COMPILE_FLAGS} /we4800")
+  endif()
+
+  # Update the CXX flags to indicate the use of the static library
+  if(${prefix}_USE_STATIC_LIBS)
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${STATIC_COMPILE_FLAGS}")
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${STATIC_COMPILE_FLAGS}")
+  endif()
 endmacro()
 
 #------------------------
@@ -241,6 +263,20 @@ macro(CassConfigureInstall var_prefix pkg_config_stem)
   # Create a binary directory executable and DLLs (windows only)
   set(INSTALL_DLL_EXE_DIR "bin")
 
+  # Determine the header install dir
+  if (CASS_INSTALL_HEADER_IN_SUBDIR)
+    if (CASS_INSTALL_HEADER_SUBDIR_NAME)
+      # User-specified include sub-dir
+      set(INSTALL_HEADER_DIR "include/${CASS_INSTALL_HEADER_SUBDIR_NAME}")
+    else()
+      # Default subdir location is 'include/cassandra'
+      set(INSTALL_HEADER_DIR "include/${PROJECT_NAME_STRING}")
+    endif()
+  else()
+    # Default header install location is 'include'
+    set(INSTALL_HEADER_DIR "include")
+  endif()
+
   if(${var_prefix}_INSTALL_PKG_CONFIG)
     if(NOT WIN32)
       find_package(PkgConfig)
@@ -248,7 +284,7 @@ macro(CassConfigureInstall var_prefix pkg_config_stem)
         set(prefix ${CMAKE_INSTALL_PREFIX})
         set(exec_prefix ${CMAKE_INSTALL_PREFIX})
         set(libdir ${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR})
-        set(includedir ${CMAKE_INSTALL_PREFIX}/include)
+        set(includedir ${CMAKE_INSTALL_PREFIX}/${INSTALL_HEADER_DIR})
         set(version ${PROJECT_VERSION_STRING})
       endif()
     endif()
@@ -256,7 +292,7 @@ macro(CassConfigureInstall var_prefix pkg_config_stem)
 
   # Determine if the header should be installed
   if(${var_prefix}_INSTALL_HEADER)
-    install(FILES ${${var_prefix}_API_HEADER_FILES} DESTINATION "include")
+    install(FILES ${${var_prefix}_API_HEADER_FILES} DESTINATION ${INSTALL_HEADER_DIR})
   endif()
 
   # Install the dynamic/shared library
@@ -435,6 +471,48 @@ macro(CassRapidJson)
   source_group("Header Files\\rapidjson\\internal" FILES ${RAPIDJSON_INTERNAL_HEADER_FILES})
   source_group("Header Files\\rapidjson\\msiinttypes" FILES ${RAPIDJSON_MSIINTTYPES_HEADER_FILES})
   include_directories(${RAPID_JSON_INCLUDE_DIR})
+endmacro()
+
+#------------------------
+# CassMiniZip
+#
+# Set some MINIZIP_* variables, set up some source_group's, and add the
+# MINIZIP include dir to our list of include dirs.
+#
+# Input: CASS_SRC_DIR
+# Output: MINIZIP_INCLUDE_DIR, MINIZIP_HEADER_FILES, MINIZIP_SOURCE_FILES
+#------------------------
+macro(CassMiniZip)
+  if (ZLIB_FOUND)
+    set(MINIZIP_INCLUDE_DIR "${CASS_SRC_DIR}/third_party/minizip")
+    set(MINIZIP_HEADER_FILES ${MINIZIP_INCLUDE_DIR}/crypt.h
+                             ${MINIZIP_INCLUDE_DIR}/ioapi.h
+                             ${MINIZIP_INCLUDE_DIR}/unzip.h)
+    set(MINIZIP_SOURCE_FILES ${MINIZIP_INCLUDE_DIR}/ioapi.c
+                             ${MINIZIP_INCLUDE_DIR}/unzip.c)
+    source_group("Header Files\\minizip" FILES ${MINIZIP_HEADER_FILES})
+    source_group("Source Files\\minizip" FILES ${MINIZIP_SOURCE_FILES})
+    include_directories(${MINIZIP_INCLUDE_DIR})
+  endif()
+endmacro()
+
+#------------------------
+# CassHttpParser
+#
+# Set some HTTP_PARSER_* variables, set up some source_group's, and add the
+# HTTP_PARSER include dir to our list of include dirs.
+#
+# Input: CASS_SRC_DIR
+# Output: HTTP_PARSER_INCLUDE_DIR, HTTP_PARSER_HEADER_FILES,
+#         HTTP_PARSER_SOURCE_FILES
+#------------------------
+macro(CassHttpParser)
+  set(HTTP_PARSER_INCLUDE_DIR "${CASS_SRC_DIR}/third_party/http-parser")
+  set(HTTP_PARSER_HEADER_FILES ${HTTP_PARSER_INCLUDE_DIR}/http_parser.h)
+  set(HTTP_PARSER_SOURCE_FILES ${HTTP_PARSER_INCLUDE_DIR}/http_parser.c)
+  source_group("Header Files\\http-parser" FILES ${HTTP_PARSER_HEADER_FILES})
+  source_group("Source Files\\http-parser" FILES ${HTTP_PARSER_SOURCE_FILES})
+  include_directories(${HTTP_PARSER_INCLUDE_DIR})
 endmacro()
 
 #------------------------
@@ -665,6 +743,7 @@ macro(CassUseZlib)
       # Assign zlib properties
       set(CASS_INCLUDES ${CASS_INCLUDES} ${ZLIB_INCLUDE_DIRS})
       set(CASS_LIBS ${CASS_LIBS} ${ZLIB_LIBRARIES})
+      set(HAVE_ZLIB On)
     else()
       message(WARNING "Could not find zlib, try to set the path to zlib root folder in the system variable ZLIB_ROOT_DIR")
       message(WARNING "zlib libraries will not be linked into build")
@@ -687,8 +766,6 @@ endmacro()
 #
 # Input: CASS_USE_STD_ATOMIC, CASS_USE_BOOST_ATOMIC, CASS_MULTICORE_COMPILATION
 #        CASS_USE_STATIC_LIBS
-# Output: CASS_USE_STD_ATOMIC, CASS_DRIVER_CXX_FLAGS, CASS_TEST_CXX_FLAGS,
-#         CASS_EXAMPLE_C_FLAGS
 #------------------------
 macro(CassSetCompilerFlags)
   # Force OLD style of implicitly dereferencing variables
@@ -803,25 +880,6 @@ macro(CassSetCompilerFlags)
       add_definitions("/MP")
     endif()
 
-    # Enable link time optimization for all MSVC build configurations
-    set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} /GL")
-    set(CMAKE_STATIC_LINKER_FLAGS_RELEASE "${CMAKE_STATIC_LINKER_FLAGS_RELEASE} /LTCG")
-    set(CMAKE_SHARED_LINKER_FLAGS_RELEASE "${CMAKE_SHARED_LINKER_FLAGS_RELEASE} /LTCG")
-    set(CMAKE_EXE_LINKER_FLAGS_RELEASE "${CMAKE_EXE_LINKER_FLAGS_RELEASE} /LTCG")
-
-    set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "${CMAKE_CXX_FLAGS_RELWITHDEBINFO} /GL")
-    string(REGEX REPLACE "[-/]INCREMENTAL" "/INCREMENTAL:NO" CMAKE_STATIC_LINKER_FLAGS_RELWITHDEBINFO "${CMAKE_STATIC_LINKER_FLAGS_RELWITHDEBINFO}")
-    set(CMAKE_STATIC_LINKER_FLAGS_RELWITHDEBINFO "${CMAKE_STATIC_LINKER_FLAGS_RELWITHDEBINFO} /LTCG")
-    string(REGEX REPLACE "[-/]INCREMENTAL" "/INCREMENTAL:NO" CMAKE_SHARED_LINKER_FLAGS_RELWITHDEBINFO "${CMAKE_SHARED_LINKER_FLAGS_RELWITHDEBINFO}")
-    set(CMAKE_SHARED_LINKER_FLAGS_RELWITHDEBINFO "${CMAKE_SHARED_LINKER_FLAGS_RELWITHDEBINFO} /LTCG")
-    string(REGEX REPLACE "[-/]INCREMENTAL" "/INCREMENTAL:NO" CMAKE_EXE_LINKER_FLAGS_RELWITHDEBINFO "${CMAKE_EXE_LINKER_FLAGS_RELWITHDEBINFO}")
-    set(CMAKE_EXE_LINKER_FLAGS_RELWITHDEBINFO "${CMAKE_EXE_LINKER_FLAGS_RELWITHDEBINFO} /LTCG")
-
-    set(CMAKE_CXX_FLAGS_MINSIZEREL "${CMAKE_CXX_FLAGS_MINSIZEREL} /GL")
-    set(CMAKE_STATIC_LINKER_FLAGS_MINSIZEREL "${CMAKE_STATIC_LINKER_FLAGS_MINSIZEREL} /LTCG")
-    set(CMAKE_SHARED_LINKER_FLAGS_MINSIZEREL "${CMAKE_SHARED_LINKER_FLAGS_MINSIZEREL} /LTCG")
-    set(CMAKE_EXE_LINKER_FLAGS_MINSIZEREL "${CMAKE_EXE_LINKER_FLAGS_MINSIZEREL} /LTCG")
-
     # On Visual C++ -pedantic flag is not used,
     # -fPIC is not used on Windows platform (all DLLs are
     # relocable), -Wall generates about 30k stupid warnings
@@ -830,7 +888,6 @@ macro(CassSetCompilerFlags)
     # TODO(mpenick): Fix these "possible loss of data" warnings
     add_definitions(/wd4244)
     add_definitions(/wd4267)
-    add_definitions(/wd4800) # Performance warning due to automatic compiler casting from int to bool
 
     # Add preprocessor definitions for proper compilation
     add_definitions(-D_CRT_SECURE_NO_WARNINGS)  # Remove warnings for not using safe functions (TODO: Fix codebase to be more secure for Visual Studio)
@@ -838,10 +895,8 @@ macro(CassSetCompilerFlags)
     add_definitions(-D_SILENCE_TR1_NAMESPACE_DEPRECATION_WARNING) # Remove warnings for TR1 deprecation (Visual Studio 15 2017); caused by sparsehash
 
     # Create the project, example, and test flags
-    set(CASS_DRIVER_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${CASS_DRIVER_CXX_FLAGS} ${WARNING_COMPILER_FLAGS}")
-    set(CASS_EXAMPLE_C_FLAGS "${CMAKE_C_FLAGS} ${WARNING_COMPILER_FLAGS}")
-    # Enable bigobj for large object files during compilation (Cassandra types integration test)
-    set(CASS_TEST_CXX_FLAGS "${CASS_DRIVER_CXX_FLAGS} ${WARNING_COMPILER_FLAGS} /bigobj")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${WARNING_COMPILER_FLAGS}")
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${WARNING_COMPILER_FLAGS}")
 
     # Assign additional library requirements for Windows
     set(CASS_LIBS ${CASS_LIBS} iphlpapi psapi wsock32 crypt32 ws2_32 userenv)
@@ -858,19 +913,16 @@ macro(CassSetCompilerFlags)
     # OpenSSL is deprecated on later versions of Mac OS X. The long-term solution
     # is to provide a CommonCryto implementation.
     if (APPLE AND CASS_USE_OPENSSL)
-      set(CASS_DRIVER_CXX_FLAGS "${CASS_DRIVER_CXX_FLAGS} -Wno-deprecated-declarations")
-      set(CASS_TEST_CXX_FLAGS "${CASS_TEST_CXX_FLAGS} -Wno-deprecated-declarations")
+      set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-deprecated-declarations")
     endif()
 
     # Enable C++11 support to use std::atomic
     if(CASS_USE_STD_ATOMIC)
-      set(CASS_DRIVER_CXX_FLAGS "${CASS_DRIVER_CXX_FLAGS} -std=c++11")
-      set(CASS_TEST_CXX_FLAGS "${CASS_TEST_CXX_FLAGS} -std=c++11")
+      set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
     endif()
 
-    set(CASS_DRIVER_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${CASS_DRIVER_CXX_FLAGS} ${WARNING_COMPILER_FLAGS} -Werror")
-    set(CASS_TEST_CXX_FLAGS "${CASS_TEST_CXX_FLAGS} ${WARNING_COMPILER_FLAGS}")
-    set(CASS_EXAMPLE_C_FLAGS "${CMAKE_C_FLAGS} ${WARNING_COMPILER_FLAGS}")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${WARNING_COMPILER_FLAGS}")
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${WARNING_COMPILER_FLAGS}")
   elseif("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
     # Clang/Intel specific compiler options
     # I disabled long-long warning because boost generates about 50 such warnings
@@ -881,19 +933,16 @@ macro(CassSetCompilerFlags)
     # OpenSSL is deprecated on later versions of Mac OS X. The long-term solution
     # is to provide a CommonCryto implementation.
     if (APPLE AND CASS_USE_OPENSSL)
-      set(CASS_DRIVER_CXX_FLAGS "${CASS_DRIVER_CXX_FLAGS} -Wno-deprecated-declarations")
-      set(CASS_TEST_CXX_FLAGS "${CASS_TEST_CXX_FLAGS} -Wno-deprecated-declarations")
+      set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-deprecated-declarations")
     endif()
 
     # Enable C++11 support to use std::atomic
     if(CASS_USE_STD_ATOMIC)
-      set(CASS_DRIVER_CXX_FLAGS "${CASS_DRIVER_CXX_FLAGS} -std=c++11")
-      set(CASS_TEST_CXX_FLAGS "${CASS_TEST_CXX_FLAGS} -std=c++11")
+      set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
     endif()
 
-    set(CASS_DRIVER_CXX_FLAGS " ${CMAKE_CXX_FLAGS} ${CASS_DRIVER_CXX_FLAGS} ${WARNING_COMPILER_FLAGS} -Werror")
-    set(CASS_TEST_CXX_FLAGS "${CASS_TEST_CXX_FLAGS} ${WARNING_COMPILER_FLAGS}")
-    set(CASS_EXAMPLE_C_FLAGS "${CMAKE_C_FLAGS} -std=c89 ${WARNING_COMPILER_FLAGS}")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${WARNING_COMPILER_FLAGS}")
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${WARNING_COMPILER_FLAGS}")
   else()
     message(FATAL_ERROR "Unsupported compiler: ${CMAKE_CXX_COMPILER_ID}")
   endif()
@@ -993,19 +1042,21 @@ macro(CassFindSourceFiles)
       ${CASS_SRC_DIR}/ssl/ssl_no_impl.cpp)
   endif()
 
-  set(CASS_ALL_SOURCE_FILES ${CASS_SRC_FILES} ${CASS_API_HEADER_FILES} ${CASS_INC_FILES})
+  CassMiniZip()
+  set(CASS_INC_FILES ${CASS_INC_FILES} ${MINIZIP_HEADER_FILES})
+  set(CASS_SRC_FILES ${CASS_SRC_FILES} ${MINIZIP_SOURCE_FILES})
 
-  # Shorten the source file pathing for log messages
-  foreach(SRC_FILE ${CASS_SRC_FILES})
-    string(REPLACE "${CASS_ROOT_DIR}/" "" LOG_FILE_ ${SRC_FILE})
-    set_source_files_properties(${SRC_FILE} PROPERTIES COMPILE_FLAGS -DLOG_FILE_=\\\"${LOG_FILE_}\\\")
-  endforeach()
+  CassHttpParser()
+  set(CASS_INC_FILES ${CASS_INC_FILES} ${HTTP_PARSER_HEADER_FILES})
+  set(CASS_SRC_FILES ${CASS_SRC_FILES} ${HTTP_PARSER_SOURCE_FILES})
+
+  set(CASS_ALL_SOURCE_FILES ${CASS_SRC_FILES} ${CASS_API_HEADER_FILES} ${CASS_INC_FILES})
 endmacro()
 
 #------------------------
 # CassConfigure
 #
-# Generate cassconfig.hpp from cassconfig.hpp.in
+# Generate driver_config.hpp from driver_config.hpp.in
 #
 # Input: CASS_ROOT_DIR, CASS_SRC_DIR
 #------------------------
@@ -1019,13 +1070,13 @@ macro(CassConfigure)
   else()
     check_symbol_exists(arc4random_buf "stdlib.h" HAVE_ARC4RANDOM)
   endif()
+
   # Determine if sigpipe is available
   check_symbol_exists(SO_NOSIGPIPE "sys/socket.h;sys/types.h" HAVE_NOSIGPIPE)
   check_symbol_exists(sigtimedwait "signal.h" HAVE_SIGTIMEDWAIT)
   if (NOT WIN32 AND NOT HAVE_NOSIGPIPE AND NOT HAVE_SIGTIMEDWAIT)
     message(WARNING "Unable to handle SIGPIPE on your platform")
   endif()
-
 
   # Determine if hash is in the tr1 namespace
   string(REPLACE "::" ";" HASH_NAMESPACE_LIST ${HASH_NAMESPACE})
@@ -1036,11 +1087,11 @@ macro(CassConfigure)
   endforeach()
 
   # Check for GCC compiler builtins
-  if(NOT CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
+  if(NOT "${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC")
     check_cxx_source_compiles("int main() { return __builtin_bswap32(42); }" HAVE_BUILTIN_BSWAP32)
     check_cxx_source_compiles("int main() { return __builtin_bswap64(42); }" HAVE_BUILTIN_BSWAP64)
   endif()
 
-  # Generate the cassconfig.hpp file
-  configure_file(${CASS_ROOT_DIR}/cassconfig.hpp.in ${CASS_SRC_DIR}/cassconfig.hpp)
+  # Generate the driver_config.hpp file
+  configure_file(${CASS_ROOT_DIR}/driver_config.hpp.in ${CASS_SRC_DIR}/driver_config.hpp)
 endmacro()

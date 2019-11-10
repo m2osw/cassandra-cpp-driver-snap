@@ -17,20 +17,22 @@
 #include "query_request.hpp"
 
 #include "constants.hpp"
-#include "request_callback.hpp"
 #include "logger.hpp"
+#include "request_callback.hpp"
 #include "serialization.hpp"
 
-namespace cass {
+using namespace datastax;
+using namespace datastax::internal::core;
 
-int QueryRequest::encode(ProtocolVersion version, RequestCallback* callback, BufferVec* bufs) const {
+int QueryRequest::encode(ProtocolVersion version, RequestCallback* callback,
+                         BufferVec* bufs) const {
   int32_t result;
   int32_t length = encode_query_or_id(bufs);
   if (has_names_for_values()) {
-    length += encode_begin(version, value_names_->size(), callback, bufs);
+    length += encode_begin(version, static_cast<uint16_t>(value_names_->size()), callback, bufs);
     result = encode_values_with_names(version, callback, bufs);
   } else {
-    length += encode_begin(version, elements().size(), callback, bufs);
+    length += encode_begin(version, static_cast<uint16_t>(elements().size()), callback, bufs);
     result = encode_values(version, callback, bufs);
   }
   if (result < 0) return result;
@@ -43,7 +45,8 @@ int QueryRequest::encode(ProtocolVersion version, RequestCallback* callback, Buf
 // where:
 // <name> is a [string]
 // <value> is a [bytes]
-int32_t QueryRequest::encode_values_with_names(ProtocolVersion version, RequestCallback* callback, BufferVec* bufs) const {
+int32_t QueryRequest::encode_values_with_names(ProtocolVersion version, RequestCallback* callback,
+                                               BufferVec* bufs) const {
   int32_t size = 0;
   for (size_t i = 0; i < value_names_->size(); ++i) {
     const Buffer& name_buf = (*value_names_)[i].buf;
@@ -76,5 +79,3 @@ size_t QueryRequest::get_indices(StringRef name, IndexVec* indices) {
 
   return indices->size();
 }
-
-} // namespace cass

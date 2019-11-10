@@ -52,7 +52,7 @@
  */
 
 #define CASS_VERSION_MAJOR 2
-#define CASS_VERSION_MINOR 12
+#define CASS_VERSION_MINOR 14
 #define CASS_VERSION_PATCH 0
 #define CASS_VERSION_SUFFIX ""
 
@@ -700,7 +700,8 @@ typedef enum  CassErrorSource_ {
   XX(CASS_ERROR_SOURCE_SSL, CASS_ERROR_SSL_NO_PEER_CERT, 3, "No peer certificate")  \
   XX(CASS_ERROR_SOURCE_SSL, CASS_ERROR_SSL_INVALID_PEER_CERT, 4, "Invalid peer certificate") \
   XX(CASS_ERROR_SOURCE_SSL, CASS_ERROR_SSL_IDENTITY_MISMATCH, 5, "Certificate does not match host or IP address") \
-  XX(CASS_ERROR_SOURCE_SSL, CASS_ERROR_SSL_PROTOCOL_ERROR, 6, "Protocol error")
+  XX(CASS_ERROR_SOURCE_SSL, CASS_ERROR_SSL_PROTOCOL_ERROR, 6, "Protocol error") \
+  XX(CASS_ERROR_SOURCE_SSL, CASS_ERROR_SSL_CLOSED, 7, "Connection closed")
 
 /* @cond IGNORE */
 #define CASS_ERROR_MAP CASS_ERROR_MAPPING /* Deprecated */
@@ -1735,16 +1736,64 @@ cass_cluster_set_max_connections_per_host(CassCluster* cluster,
 /**
  * Sets the amount of time to wait before attempting to reconnect.
  *
- * <b>Default:</b> 2000 milliseconds
- *
  * @public @memberof CassCluster
+ *
+ * @deprecated This is being replaced with cass_cluster_set_constant_reconnect().
+ * Expect this to be removed in a future release.
  *
  * @param[in] cluster
  * @param[in] wait_time
  */
-CASS_EXPORT void
+CASS_EXPORT CASS_DEPRECATED(void
 cass_cluster_set_reconnect_wait_time(CassCluster* cluster,
-                                     unsigned wait_time);
+                                     unsigned wait_time));
+
+/**
+ * Configures the cluster to use a reconnection policy that waits a constant
+ * time between each reconnection attempt.
+ *
+ * @public @memberof CassCluster
+ *
+ * @param[in] cluster
+ * @param[in] delay_ms Time in milliseconds to delay attempting a reconnection;
+ * 0 to perform a reconnection immediately.
+ */
+CASS_EXPORT void
+cass_cluster_set_constant_reconnect(CassCluster* cluster,
+                                    cass_uint64_t delay_ms);
+
+/**
+ * Configures the cluster to use a reconnection policy that waits exponentially
+ * longer between each reconnection attempt; however will maintain a constant
+ * delay once the maximum delay is reached.
+ *
+ * <b>Default:</b>
+ * <ul>
+ *   <li>2000 milliseconds base delay</li>
+ *   <li>60000 milliseconds max delay</li>
+ * </ul>
+ *
+ * <p>
+ *   <b>Note:</b> A random amount of jitter (+/- 15%) will be added to the pure
+ *   exponential delay value. This helps to prevent situations where multiple
+ *   connections are in the reconnection process at exactly the same time. The
+ *   jitter will never cause the delay to be less than the base delay, or more
+ *   than the max delay.
+ * </p>
+ *
+ * @public @memberof CassCluster
+ *
+ * @param[in] cluster
+ * @param[in] base_delay_ms The base delay (in milliseconds) to use for
+ * scheduling reconnection attempts.
+ * @param[in] max_delay_ms The maximum delay to wait between two reconnection
+ * attempts.
+ * @return CASS_OK if successful, otherwise error occurred.
+ */
+CASS_EXPORT CassError
+cass_cluster_set_exponential_reconnect(CassCluster* cluster,
+                                       cass_uint64_t base_delay_ms,
+                                       cass_uint64_t max_delay_ms);
 
 /**
  * Sets the amount of time, in microseconds, to wait for new requests to
@@ -2699,7 +2748,7 @@ cass_cluster_set_no_compact(CassCluster* cluster,
  * <b>Note:</b> The callback is invoked only when state changes in the cluster
  * are applicable to the configured load balancing policy(s).
  *
- * @public @memberor CassCluster
+ * @public @memberof CassCluster
  *
  * @param[in] cluster
  * @param[in] callback
@@ -2710,6 +2759,71 @@ CASS_EXPORT CassError
 cass_cluster_set_host_listener_callback(CassCluster* cluster,
                                         CassHostListenerCallback callback,
                                         void* data);
+
+/**
+ * Sets the secure connection bundle path for processing DBaaS credentials.
+ *
+ * This will pre-configure a cluster using the credentials format provided by
+ * the DBaaS cloud provider.
+ *
+ * @param[in] cluster
+ * @param[in] path Absolute path to DBaaS credentials file.
+ * @return CASS_OK if successful, otherwise error occured.
+ */
+CASS_EXPORT CassError
+cass_cluster_set_cloud_secure_connection_bundle(CassCluster* cluster,
+                                                const char* path);
+
+/**
+ * Same as cass_cluster_set_cloud_secure_connection_bundle(), but with lengths
+ * for string parameters.
+ *
+ * @see cass_cluster_set_cloud_secure_connection_bundle()
+ *
+ * @param[in] cluster
+ * @param[in] path Absolute path to DBaaS credentials file.
+ * @param[in] path_length Length of path variable.
+ * @return CASS_OK if successful, otherwise error occured.
+ */
+CASS_EXPORT CassError
+cass_cluster_set_cloud_secure_connection_bundle_n(CassCluster* cluster,
+                                                  const char* path,
+                                                  size_t path_length);
+
+/**
+ * Same as cass_cluster_set_cloud_secure_connection_bundle(), but it does not
+ * initialize the underlying SSL library implementation. The SSL library still
+ * needs to be initialized, but it's up to the client application to handle
+ * initialization. This is similar to the function cass_ssl_new_no_lib_init(),
+ * and its documentation should be used as a reference to properly initialize
+ * the underlying SSL library.
+ *
+ * @see cass_ssl_new_no_lib_init()
+ * @see cass_cluster_set_cloud_secure_connection_bundle()
+ *
+ * @param[in] cluster
+ * @param[in] path Absolute path to DBaaS credentials file.
+ * @return CASS_OK if successful, otherwise error occured.
+ */
+CASS_EXPORT CassError
+cass_cluster_set_cloud_secure_connection_bundle_no_ssl_lib_init(CassCluster* cluster,
+                                                                const char* path);
+
+/**
+ * Same as cass_cluster_set_cloud_secure_connection_bundle_no_ssl_lib_init(),
+ * but with lengths for string parameters.
+ *
+ * @see cass_cluster_set_cloud_secure_connection_bundle_no_ssl_lib_init()
+ *
+ * @param[in] cluster
+ * @param[in] path Absolute path to DBaaS credentials file.
+ * @param[in] path_length Length of path variable.
+ * @return CASS_OK if successful, otherwise error occured.
+ */
+CASS_EXPORT CassError
+cass_cluster_set_cloud_secure_connection_bundle_no_ssl_lib_init_n(CassCluster* cluster,
+                                                                  const char* path,
+                                                                  size_t path_length);
 
 /***********************************************************************************
  *
