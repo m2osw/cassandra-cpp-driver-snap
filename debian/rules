@@ -12,6 +12,13 @@
 %:
 	dh $@ --parallel
 
+override_dh_auto_install:
+	dh_auto_install
+	cp usr/lib/x86_64-linux-gnu/libcassandra_static.a usr/lib/x86_64-linux-gnu/libcassandra.a
+
 override_dh_auto_configure:
-	dh_auto_configure -- -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_FLAGS=-std=c++14 -DCASS_BUILD_STATIC=ON -DCASS_BUILD_DOCS=ON
+	dh_auto_configure -- -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_FLAGS=-std=c++14 -DCASS_BUILD_STATIC=ON
+
+override_dh_makeshlibs:
+	dh_makeshlibs -V
 
