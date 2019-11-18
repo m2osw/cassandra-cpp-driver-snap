@@ -14,7 +14,7 @@
 
 override_dh_auto_install:
 	dh_auto_install
-	cp ./x86_64-linux-gnu/libcassandra_static.a ./x86_64-linux-gnu/libcassandra.a
+	cp ./obj-x86_64-linux-gnu/libcassandra_static.a ./obj-x86_64-linux-gnu/libcassandra.a
 
 override_dh_auto_configure:
 	dh_auto_configure -- -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_FLAGS=-std=c++14 -DCASS_BUILD_STATIC=ON
