@@ -1,3 +1,9 @@
+cassandra-cpp-driver-snap (2.14.0.5~xenial) xenial; urgency=high
+
+  * Fixed the destination which has to be the final installation directory.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Sun, 17 Nov 2019 19:53:22 -0800
+
 cassandra-cpp-driver-snap (2.14.0.4~xenial) xenial; urgency=high
 
   * Actually that path includes "obj-..." at the start.
