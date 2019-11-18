@@ -1,3 +1,9 @@
+cassandra-cpp-driver-snap (2.14.0.3~xenial) xenial; urgency=high
+
+  * Fixed the `cp` command. Let's see how that one works.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Sun, 17 Nov 2019 19:22:49 -0800
+
 cassandra-cpp-driver-snap (2.14.0.2~xenial) xenial; urgency=high
 
   * Added some debug commands to know where the file is.
