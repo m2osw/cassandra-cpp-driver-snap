@@ -1,3 +1,9 @@
+cassandra-cpp-driver-snap (2.14.0.2~xenial) xenial; urgency=high
+
+  * Added some debug commands to know where the file is.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Sun, 17 Nov 2019 16:49:14 -0800
+
 cassandra-cpp-driver-snap (2.14.0.1~xenial) xenial; urgency=high
 
   * Removing the docs (they require special handling now).
