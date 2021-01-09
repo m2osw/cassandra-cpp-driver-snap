@@ -1,3 +1,9 @@
+cassandra-cpp-driver-snap (2.14.0.6~xenial) xenial; urgency=high
+
+  * Bump version to rebuild on all systems.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Sat, 09 Jan 2021 13:35:11 -0800
+
 cassandra-cpp-driver-snap (2.14.0.5~xenial) xenial; urgency=high
 
   * Fixed the destination which has to be the final installation directory.
