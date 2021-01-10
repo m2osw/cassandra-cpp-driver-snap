@@ -12,9 +12,17 @@
 %:
 	dh $@ --parallel
 
+override_dh_install:
+	ARCH=`uname -p`; \
+	if test "$${ARCH}" != "x86_64"; then \
+		sed -i -e "s/x86_64/$${ARCH}/g" debian/*.install; \
+	fi
+	dh_install
+
 override_dh_auto_install:
 	dh_auto_install
-	cp ./obj-x86_64-linux-gnu/libcassandra_static.a ./debian/tmp/usr/lib/x86_64-linux-gnu/libcassandra.a
+	ARCH=`uname -p`; \
+	cp ./obj-$${ARCH}-linux-gnu/libcassandra_static.a ./debian/tmp/usr/lib/$${ARCH}-linux-gnu/libcassandra.a
 
 override_dh_auto_configure:
 	dh_auto_configure -- -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_FLAGS=-std=c++14 -DCASS_BUILD_STATIC=ON
