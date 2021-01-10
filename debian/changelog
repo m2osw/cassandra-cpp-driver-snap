@@ -1,3 +1,9 @@
+cassandra-cpp-driver-snap (2.14.0.9~bionic) bionic; urgency=high
+
+  * Testing with the full version (4th number) in the control file.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Sat, 09 Jan 2021 17:05:59 -0800
+
 cassandra-cpp-driver-snap (2.14.0.8~bionic) bionic; urgency=high
 
   * Okay, got it, the libuv1 dependency was missing the distribution.

@@ -5,7 +5,7 @@ Build-Depends: cmake,
     debhelper,
     doxygen,
     graphviz,
-    libuv1-snap-dev (>= 1.33.1~bionic),
+    libuv1-snap-dev (>= 1.33.1.7~bionic),
     libssl-dev
 Standards-Version: 3.9.4
 Section: libs
