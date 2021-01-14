@@ -38,7 +38,9 @@ find_path(LIBUV_INCLUDE_DIR
   ${_LIBUV_ROOT_HINTS_AND_PATHS}
   PATH_SUFFIXES include
   NO_DEFAULT_PATH)
-set(_LIBUV_NAMES "uv"
+set(_LIBUV_NAMES ${LIBUV_NAMES}
+                 ENV LIBUV_NAMES
+                 "uv"
                  "libuv")
 if(CASS_USE_STATIC_LIBS)
   set(_LIBUV_ORIG_CMAKE_FIND_LIBRARY_SUFFIXES ${CMAKE_FIND_LIBRARY_SUFFIXES})
