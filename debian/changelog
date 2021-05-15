@@ -1,3 +1,9 @@
+cassandra-cpp-driver-snap (2.14.0.12~bionic) bionic; urgency=high
+
+  * Try again without the Conflicts: field in libuv1-snap.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Sat, 15 May 2021 12:00:34 -0700
+
 cassandra-cpp-driver-snap (2.14.0.11~bionic) bionic; urgency=high
 
   * Try again with libuv1-snap instead of libuv1.
