@@ -1,3 +1,9 @@
+cassandra-cpp-driver-snap (2.14.0.11~bionic) bionic; urgency=high
+
+  * Try again with libuv1-snap instead of libuv1.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Sat, 15 May 2021 10:26:10 -0700
+
 cassandra-cpp-driver-snap (2.14.0.10~bionic) bionic; urgency=high
 
   * Added necessary cmake entries to support libuv-snap instead of libuv.
