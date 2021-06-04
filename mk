@@ -1,19 +1,13 @@
 #!/bin/sh
 #
-# Sample script to run make without having to retype the long path each time
-# This will work if you built the environment using our ~/bin/build-snap script
+# See the snapcmakemodules project for details about this script
+#     https://github.com/m2osw/snapcmakemodules
 
-case $1 in
-"-l")
-	make -C ../../../BUILD/contrib/cassandra-cpp-driver-snap 2>&1 | less -SR
-	;;
+if test -x ../../cmake/scripts/mk
+then
+	../../cmake/scripts/mk $*
+else
+	echo "error: could not locate the cmake mk script"
+	exit 1
+fi
 
-"-i")
-	make -C ../../../BUILD/contrib/cassandra-cpp-driver-snap install
-	;;
-
-*)
-	make -C ../../../BUILD/contrib/cassandra-cpp-driver-snap
-	;;
-
-esac
